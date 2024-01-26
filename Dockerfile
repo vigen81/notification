@@ -1,9 +1,9 @@
-FROM golang:alpine AS builder
+FROM golang:alpine AS build
 ENV CGO_ENABLED=0 GOOS=linux
-WORKDIR /go/src/notification-service
+WORKDIR /go/src/app
+RUN apk add make ca-certificates tzdata git
 
-RUN apk --update --no-cache add ca-certificates make git
-ENV GOPRIVATE="gitlab.com/healthcare-integration/golang"
+ENV GOPRIVATE="gitlab.com/healthcare-integration"
 ARG gitlab_user
 ENV gitlab_user=$gitlab_user
 ARG gitlab_personal_token
@@ -11,14 +11,19 @@ ENV gitlab_personal_token=$gitlab_personal_token
 RUN git config --global url."https://${gitlab_user}:${gitlab_personal_token}@gitlab.com:".insteadOf "https://gitlab.com"
 
 
-COPY go.mod .
-COPY go.sum .
+
+COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN make build
+RUN make  build
+
+
 
 FROM scratch
-COPY --from=builder /etc/ssl/certs /etc/ssl/certs
-COPY --from=builder /go/src/notification-service/notification-service /notification-service
-ENTRYPOINT ["/notification-service"]
-CMD []
+COPY --from=build /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=build /etc/ssl/certs /etc/ssl/certs
+COPY --from=build /go/src/app/app /app
+
+
+ENTRYPOINT ["/app"]
+

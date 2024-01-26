@@ -1,14 +1,14 @@
 package schema
 
 import (
-	`encoding/json`
-	
-	`entgo.io/ent`
-	`entgo.io/ent/schema/field`
-	`entgo.io/ent/schema/index`
-	`entgo.io/ent/schema/mixin`
-	
-	`gitlab.com/healthcare-integration/golang/notification-service/types`
+	"encoding/json"
+
+	"entgo.io/ent"
+	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
+	"entgo.io/ent/schema/mixin"
+
+	"gitlab.com/healthcare-integration/golang/notification-service/types"
 )
 
 // Notification holds the schema definition for the Notification entity.
@@ -39,7 +39,9 @@ func (Notification) Fields() []ent.Field {
 		field.Text("body"),
 		field.String("headline").Optional(),
 		field.String("name").Optional(),
-		
+		field.String("from").Optional(),
+		field.String("reply_to").Optional(),
+
 		// field.String("address"),
 		field.Text("address").GoType(types.Address("")),
 		field.String("request_id").Optional().Nillable(),

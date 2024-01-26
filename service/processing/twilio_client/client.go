@@ -1,12 +1,12 @@
 package twilio_client
 
 import (
-	`errors`
-	`sync`
-	
+	"errors"
+	"sync"
+
 	"github.com/twilio/twilio-go"
-	openapi `github.com/twilio/twilio-go/rest/api/v2010`
-	`go-micro.dev/v4/config/reader`
+	openapi "github.com/twilio/twilio-go/rest/api/v2010"
+	"go-micro.dev/v4/config/reader"
 )
 
 var params Config
@@ -39,7 +39,7 @@ func Sms(to, payload, service string) (data string, err error) {
 	body.SetTo(to)
 	body.SetMessagingServiceSid(from)
 	body.SetBody(payload)
-	resp, err := getClient().Client.ApiV2010.CreateMessage(body)
+	resp, err := getClient().Client.Api.CreateMessage(body)
 	if nil != err {
 		return "", err
 	}
@@ -56,7 +56,7 @@ var api *httpClient
 
 func getClient() *httpClient {
 	once.Do(func() {
-		client := twilio.NewRestClientWithParams(twilio.RestClientParams{
+		client := twilio.NewRestClientWithParams(twilio.ClientParams{
 			Username: params.AccountSid,
 			Password: params.AuthToken,
 		})

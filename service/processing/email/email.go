@@ -1,16 +1,16 @@
 package email
 
 import (
-	`encoding/json`
-	`errors`
-	`fmt`
-	`strings`
-	
-	`github.com/sendgrid/sendgrid-go`
-	`github.com/sendgrid/sendgrid-go/helpers/mail`
-	`go-micro.dev/v4/config/reader`
-	
-	`gitlab.com/healthcare-integration/golang/notification-service/ent`
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
+
+	"github.com/sendgrid/sendgrid-go"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	"go-micro.dev/v4/config/reader"
+
+	"gitlab.com/healthcare-integration/golang/notification-service/ent"
 )
 
 var config configuration
@@ -25,7 +25,6 @@ func Configure(r reader.Value) error {
 
 type configuration struct {
 	Key     string `json:"key"`
-	From    string `json:"from"`
 	Name    string `json:"name"`
 	ReplyTo string `json:"reply_to"`
 }
@@ -41,7 +40,7 @@ type errorsList struct {
 
 func (e errorsList) Error() string {
 	var array []string
-	
+
 	for _, v := range e.Errors {
 		array = append(array, v.Message)
 	}
@@ -78,35 +77,35 @@ func NewMailer() *Api {
 }
 
 func (s *Api) Do(notification *ent.Notification) (err error) {
-	
+
 	request := sendgrid.GetRequest(config.Key, "/v3/mail/send", "https://api.sendgrid.com")
 	request.Method = "POST"
-	
+
 	to := mail.NewEmail(notification.Name, notification.Address.String())
-	
-	from := mail.NewEmail(config.Name, config.From)
+
+	from := mail.NewEmail(config.Name, notification.From)
 	replyTo := mail.NewEmail(config.Name, config.ReplyTo)
-	
+
 	body := mail.NewV3Mail()
 	body.SetReplyTo(replyTo)
 	body.SetFrom(from)
-	
+
 	if "" != notification.Body {
 		content := mail.NewContent("text/html", notification.Body)
 		body.AddContent(content)
 	}
-	
+
 	personalization := mail.NewPersonalization()
 	body.AddPersonalizations(personalization)
 	personalization.AddTos(to)
 	personalization.Subject = notification.Headline
-	
+
 	if nil != notification.Meta {
 		body.SetTemplateID(notification.Meta.TemplateID)
 		for k, v := range notification.Meta.Params {
 			personalization.SetDynamicTemplateData(k, v)
 		}
-		
+
 		if nil != notification.Meta.Attachment {
 			meta := notification.Meta.Attachment
 			attachment := &mail.Attachment{
@@ -118,19 +117,19 @@ func (s *Api) Do(notification *ent.Notification) (err error) {
 			body.AddAttachment(attachment)
 		}
 	}
-	
+
 	payload := mail.GetRequestBody(body)
 	request.Body = payload
-	
+
 	if nil != err {
 		return err
 	}
-	
+
 	response, err := sendgrid.API(request)
 	if nil != err {
 		return err
 	}
-	
+
 	if response.StatusCode > 250 {
 		var errData errorsList
 		err = json.Unmarshal([]byte(response.Body), &errData)
