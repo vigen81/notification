@@ -1,7 +1,6 @@
 package twilio_client
 
 import (
-	"errors"
 	"sync"
 
 	"github.com/twilio/twilio-go"
@@ -12,7 +11,7 @@ import (
 var params Config
 
 type ISms interface {
-	Sms(to, body, service string) (string, error)
+	Sms(to, body, from string) (string, error)
 }
 
 func Configure(r reader.Value) error {
@@ -25,16 +24,12 @@ func Configure(r reader.Value) error {
 }
 
 type Config struct {
-	AccountSid string            `json:"account_sid"`
-	AuthToken  string            `json:"auth_token"`
-	From       map[string]string `json:"from"`
+	AccountSid string `json:"account_sid"`
+	AuthToken  string `json:"auth_token"`
 }
 
-func Sms(to, payload, service string) (data string, err error) {
-	from, ok := params.From[service]
-	if false == ok {
-		return "", errors.New("service not found")
-	}
+func Sms(to, payload, from string) (data string, err error) {
+
 	body := &openapi.CreateMessageParams{}
 	body.SetTo(to)
 	body.SetMessagingServiceSid(from)

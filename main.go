@@ -24,7 +24,7 @@ import (
 )
 
 var (
-	serviceName = "code.codify.notification.service"
+	serviceName = "core.codify.notification.service"
 	version     = "latest"
 )
 
@@ -65,8 +65,6 @@ func main() {
 			return task.Background()
 		}),
 	)
-
-	logger.Fields(map[string]interface{}{"x": 2}).Log(logger.InfoLevel, "debug")
 
 	// Register handler
 	err = pb.RegisterNotificationServiceHandler(service.Server(), new(handler.NotificationService))
