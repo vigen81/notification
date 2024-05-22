@@ -130,6 +130,26 @@ func (nu *NotificationUpdate) ClearReplyTo() *NotificationUpdate {
 	return nu
 }
 
+// SetTag sets the "tag" field.
+func (nu *NotificationUpdate) SetTag(s string) *NotificationUpdate {
+	nu.mutation.SetTag(s)
+	return nu
+}
+
+// SetNillableTag sets the "tag" field if the given value is not nil.
+func (nu *NotificationUpdate) SetNillableTag(s *string) *NotificationUpdate {
+	if s != nil {
+		nu.SetTag(*s)
+	}
+	return nu
+}
+
+// ClearTag clears the value of the "tag" field.
+func (nu *NotificationUpdate) ClearTag() *NotificationUpdate {
+	nu.mutation.ClearTag()
+	return nu
+}
+
 // SetAddress sets the "address" field.
 func (nu *NotificationUpdate) SetAddress(t types.Address) *NotificationUpdate {
 	nu.mutation.SetAddress(t)
@@ -349,6 +369,12 @@ func (nu *NotificationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nu.mutation.ReplyToCleared() {
 		_spec.ClearField(notification.FieldReplyTo, field.TypeString)
 	}
+	if value, ok := nu.mutation.Tag(); ok {
+		_spec.SetField(notification.FieldTag, field.TypeString, value)
+	}
+	if nu.mutation.TagCleared() {
+		_spec.ClearField(notification.FieldTag, field.TypeString)
+	}
 	if value, ok := nu.mutation.Address(); ok {
 		_spec.SetField(notification.FieldAddress, field.TypeString, value)
 	}
@@ -502,6 +528,26 @@ func (nuo *NotificationUpdateOne) SetNillableReplyTo(s *string) *NotificationUpd
 // ClearReplyTo clears the value of the "reply_to" field.
 func (nuo *NotificationUpdateOne) ClearReplyTo() *NotificationUpdateOne {
 	nuo.mutation.ClearReplyTo()
+	return nuo
+}
+
+// SetTag sets the "tag" field.
+func (nuo *NotificationUpdateOne) SetTag(s string) *NotificationUpdateOne {
+	nuo.mutation.SetTag(s)
+	return nuo
+}
+
+// SetNillableTag sets the "tag" field if the given value is not nil.
+func (nuo *NotificationUpdateOne) SetNillableTag(s *string) *NotificationUpdateOne {
+	if s != nil {
+		nuo.SetTag(*s)
+	}
+	return nuo
+}
+
+// ClearTag clears the value of the "tag" field.
+func (nuo *NotificationUpdateOne) ClearTag() *NotificationUpdateOne {
+	nuo.mutation.ClearTag()
 	return nuo
 }
 
@@ -753,6 +799,12 @@ func (nuo *NotificationUpdateOne) sqlSave(ctx context.Context) (_node *Notificat
 	}
 	if nuo.mutation.ReplyToCleared() {
 		_spec.ClearField(notification.FieldReplyTo, field.TypeString)
+	}
+	if value, ok := nuo.mutation.Tag(); ok {
+		_spec.SetField(notification.FieldTag, field.TypeString, value)
+	}
+	if nuo.mutation.TagCleared() {
+		_spec.ClearField(notification.FieldTag, field.TypeString)
 	}
 	if value, ok := nuo.mutation.Address(); ok {
 		_spec.SetField(notification.FieldAddress, field.TypeString, value)

@@ -90,6 +90,11 @@ func ReplyTo(v string) predicate.Notification {
 	return predicate.Notification(sql.FieldEQ(FieldReplyTo, v))
 }
 
+// Tag applies equality check predicate on the "tag" field. It's identical to TagEQ.
+func Tag(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldEQ(FieldTag, v))
+}
+
 // Address applies equality check predicate on the "address" field. It's identical to AddressEQ.
 func Address(v types.Address) predicate.Notification {
 	return predicate.Notification(sql.FieldEQ(FieldAddress, v))
@@ -553,6 +558,81 @@ func ReplyToEqualFold(v string) predicate.Notification {
 // ReplyToContainsFold applies the ContainsFold predicate on the "reply_to" field.
 func ReplyToContainsFold(v string) predicate.Notification {
 	return predicate.Notification(sql.FieldContainsFold(FieldReplyTo, v))
+}
+
+// TagEQ applies the EQ predicate on the "tag" field.
+func TagEQ(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldEQ(FieldTag, v))
+}
+
+// TagNEQ applies the NEQ predicate on the "tag" field.
+func TagNEQ(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldNEQ(FieldTag, v))
+}
+
+// TagIn applies the In predicate on the "tag" field.
+func TagIn(vs ...string) predicate.Notification {
+	return predicate.Notification(sql.FieldIn(FieldTag, vs...))
+}
+
+// TagNotIn applies the NotIn predicate on the "tag" field.
+func TagNotIn(vs ...string) predicate.Notification {
+	return predicate.Notification(sql.FieldNotIn(FieldTag, vs...))
+}
+
+// TagGT applies the GT predicate on the "tag" field.
+func TagGT(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldGT(FieldTag, v))
+}
+
+// TagGTE applies the GTE predicate on the "tag" field.
+func TagGTE(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldGTE(FieldTag, v))
+}
+
+// TagLT applies the LT predicate on the "tag" field.
+func TagLT(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldLT(FieldTag, v))
+}
+
+// TagLTE applies the LTE predicate on the "tag" field.
+func TagLTE(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldLTE(FieldTag, v))
+}
+
+// TagContains applies the Contains predicate on the "tag" field.
+func TagContains(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldContains(FieldTag, v))
+}
+
+// TagHasPrefix applies the HasPrefix predicate on the "tag" field.
+func TagHasPrefix(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldHasPrefix(FieldTag, v))
+}
+
+// TagHasSuffix applies the HasSuffix predicate on the "tag" field.
+func TagHasSuffix(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldHasSuffix(FieldTag, v))
+}
+
+// TagIsNil applies the IsNil predicate on the "tag" field.
+func TagIsNil() predicate.Notification {
+	return predicate.Notification(sql.FieldIsNull(FieldTag))
+}
+
+// TagNotNil applies the NotNil predicate on the "tag" field.
+func TagNotNil() predicate.Notification {
+	return predicate.Notification(sql.FieldNotNull(FieldTag))
+}
+
+// TagEqualFold applies the EqualFold predicate on the "tag" field.
+func TagEqualFold(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldEqualFold(FieldTag, v))
+}
+
+// TagContainsFold applies the ContainsFold predicate on the "tag" field.
+func TagContainsFold(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldContainsFold(FieldTag, v))
 }
 
 // AddressEQ applies the EQ predicate on the "address" field.

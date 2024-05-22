@@ -34,6 +34,8 @@ type Notification struct {
 	From string `json:"from,omitempty"`
 	// ReplyTo holds the value of the "reply_to" field.
 	ReplyTo string `json:"reply_to,omitempty"`
+	// Tag holds the value of the "tag" field.
+	Tag string `json:"tag,omitempty"`
 	// Address holds the value of the "address" field.
 	Address types.Address `json:"address,omitempty"`
 	// RequestID holds the value of the "request_id" field.
@@ -60,7 +62,7 @@ func (*Notification) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case notification.FieldID, notification.FieldScheduleTs:
 			values[i] = new(sql.NullInt64)
-		case notification.FieldBody, notification.FieldHeadline, notification.FieldName, notification.FieldFrom, notification.FieldReplyTo, notification.FieldRequestID, notification.FieldType, notification.FieldStatus, notification.FieldErrorMessage:
+		case notification.FieldBody, notification.FieldHeadline, notification.FieldName, notification.FieldFrom, notification.FieldReplyTo, notification.FieldTag, notification.FieldRequestID, notification.FieldType, notification.FieldStatus, notification.FieldErrorMessage:
 			values[i] = new(sql.NullString)
 		case notification.FieldCreateTime, notification.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
@@ -128,6 +130,12 @@ func (n *Notification) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field reply_to", values[i])
 			} else if value.Valid {
 				n.ReplyTo = value.String
+			}
+		case notification.FieldTag:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field tag", values[i])
+			} else if value.Valid {
+				n.Tag = value.String
 			}
 		case notification.FieldAddress:
 			if value, ok := values[i].(*types.Address); !ok {
@@ -232,6 +240,9 @@ func (n *Notification) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("reply_to=")
 	builder.WriteString(n.ReplyTo)
+	builder.WriteString(", ")
+	builder.WriteString("tag=")
+	builder.WriteString(n.Tag)
 	builder.WriteString(", ")
 	builder.WriteString("address=")
 	builder.WriteString(fmt.Sprintf("%v", n.Address))

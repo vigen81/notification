@@ -18,6 +18,7 @@ var (
 		{Name: "name", Type: field.TypeString, Nullable: true},
 		{Name: "from", Type: field.TypeString, Nullable: true},
 		{Name: "reply_to", Type: field.TypeString, Nullable: true},
+		{Name: "tag", Type: field.TypeString, Nullable: true},
 		{Name: "address", Type: field.TypeString, Size: 2147483647},
 		{Name: "request_id", Type: field.TypeString, Nullable: true},
 		{Name: "schedule_ts", Type: field.TypeInt64, Nullable: true},
@@ -35,12 +36,12 @@ var (
 			{
 				Name:    "notification_request_id",
 				Unique:  true,
-				Columns: []*schema.Column{NotificationsColumns[9]},
+				Columns: []*schema.Column{NotificationsColumns[10]},
 			},
 			{
 				Name:    "notification_schedule_ts_status",
 				Unique:  false,
-				Columns: []*schema.Column{NotificationsColumns[10], NotificationsColumns[12]},
+				Columns: []*schema.Column{NotificationsColumns[11], NotificationsColumns[13]},
 			},
 		},
 	}

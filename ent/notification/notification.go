@@ -28,6 +28,8 @@ const (
 	FieldFrom = "from"
 	// FieldReplyTo holds the string denoting the reply_to field in the database.
 	FieldReplyTo = "reply_to"
+	// FieldTag holds the string denoting the tag field in the database.
+	FieldTag = "tag"
 	// FieldAddress holds the string denoting the address field in the database.
 	FieldAddress = "address"
 	// FieldRequestID holds the string denoting the request_id field in the database.
@@ -56,6 +58,7 @@ var Columns = []string{
 	FieldName,
 	FieldFrom,
 	FieldReplyTo,
+	FieldTag,
 	FieldAddress,
 	FieldRequestID,
 	FieldScheduleTs,
@@ -178,6 +181,11 @@ func ByFrom(opts ...sql.OrderTermOption) OrderOption {
 // ByReplyTo orders the results by the reply_to field.
 func ByReplyTo(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldReplyTo, opts...).ToFunc()
+}
+
+// ByTag orders the results by the tag field.
+func ByTag(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTag, opts...).ToFunc()
 }
 
 // ByAddress orders the results by the address field.

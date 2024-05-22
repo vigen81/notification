@@ -63,6 +63,7 @@ func (n notificationServiceHandler) Email(_ context.Context, request *pb.EmailRe
 		SetType(notification.TypeEMAIL).
 		SetFrom(request.From).
 		SetReplyTo(request.ReplyTo).
+		SetTag(request.Info.Tag).
 		SetAddress(types.Address(request.Address)).
 		SetBody(request.Body).
 		SetHeadline(request.Subject).
@@ -119,6 +120,7 @@ func (n notificationServiceHandler) Sms(_ context.Context, request *pb.SmsReques
 	item := db.Client().Notification.Create().
 		SetAddress(types.Address(request.PhoneNumber)).
 		SetBody(request.Body).
+		SetTag(request.Info.Tag).
 		SetType(notification.TypeSMS).
 		SetStatus(notification.StatusACTIVE).
 		SetMeta(&schema.NotificationMeta{Service: request.Service}).
@@ -154,6 +156,7 @@ func (n notificationServiceHandler) Notification(_ context.Context, request *pb.
 	item := db.Client().Notification.Create().
 		SetAddress(types.Address(request.Address)).
 		SetBody(request.Body).
+		SetTag(request.Info.Tag).
 		SetHeadline(request.Headline).
 		SetType(notification.TypePUSH).
 		SetStatus(notification.StatusACTIVE).

@@ -42,6 +42,7 @@ type NotificationMutation struct {
 	name           *string
 	from           *string
 	reply_to       *string
+	tag            *string
 	address        *types.Address
 	request_id     *string
 	schedule_ts    *int64
@@ -458,6 +459,55 @@ func (m *NotificationMutation) ResetReplyTo() {
 	delete(m.clearedFields, notification.FieldReplyTo)
 }
 
+// SetTag sets the "tag" field.
+func (m *NotificationMutation) SetTag(s string) {
+	m.tag = &s
+}
+
+// Tag returns the value of the "tag" field in the mutation.
+func (m *NotificationMutation) Tag() (r string, exists bool) {
+	v := m.tag
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTag returns the old "tag" field's value of the Notification entity.
+// If the Notification object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationMutation) OldTag(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTag is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTag requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTag: %w", err)
+	}
+	return oldValue.Tag, nil
+}
+
+// ClearTag clears the value of the "tag" field.
+func (m *NotificationMutation) ClearTag() {
+	m.tag = nil
+	m.clearedFields[notification.FieldTag] = struct{}{}
+}
+
+// TagCleared returns if the "tag" field was cleared in this mutation.
+func (m *NotificationMutation) TagCleared() bool {
+	_, ok := m.clearedFields[notification.FieldTag]
+	return ok
+}
+
+// ResetTag resets all changes to the "tag" field.
+func (m *NotificationMutation) ResetTag() {
+	m.tag = nil
+	delete(m.clearedFields, notification.FieldTag)
+}
+
 // SetAddress sets the "address" field.
 func (m *NotificationMutation) SetAddress(t types.Address) {
 	m.address = &t
@@ -817,7 +867,7 @@ func (m *NotificationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NotificationMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 15)
 	if m.create_time != nil {
 		fields = append(fields, notification.FieldCreateTime)
 	}
@@ -838,6 +888,9 @@ func (m *NotificationMutation) Fields() []string {
 	}
 	if m.reply_to != nil {
 		fields = append(fields, notification.FieldReplyTo)
+	}
+	if m.tag != nil {
+		fields = append(fields, notification.FieldTag)
 	}
 	if m.address != nil {
 		fields = append(fields, notification.FieldAddress)
@@ -882,6 +935,8 @@ func (m *NotificationMutation) Field(name string) (ent.Value, bool) {
 		return m.From()
 	case notification.FieldReplyTo:
 		return m.ReplyTo()
+	case notification.FieldTag:
+		return m.Tag()
 	case notification.FieldAddress:
 		return m.Address()
 	case notification.FieldRequestID:
@@ -919,6 +974,8 @@ func (m *NotificationMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldFrom(ctx)
 	case notification.FieldReplyTo:
 		return m.OldReplyTo(ctx)
+	case notification.FieldTag:
+		return m.OldTag(ctx)
 	case notification.FieldAddress:
 		return m.OldAddress(ctx)
 	case notification.FieldRequestID:
@@ -990,6 +1047,13 @@ func (m *NotificationMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetReplyTo(v)
+		return nil
+	case notification.FieldTag:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTag(v)
 		return nil
 	case notification.FieldAddress:
 		v, ok := value.(types.Address)
@@ -1097,6 +1161,9 @@ func (m *NotificationMutation) ClearedFields() []string {
 	if m.FieldCleared(notification.FieldReplyTo) {
 		fields = append(fields, notification.FieldReplyTo)
 	}
+	if m.FieldCleared(notification.FieldTag) {
+		fields = append(fields, notification.FieldTag)
+	}
 	if m.FieldCleared(notification.FieldRequestID) {
 		fields = append(fields, notification.FieldRequestID)
 	}
@@ -1134,6 +1201,9 @@ func (m *NotificationMutation) ClearField(name string) error {
 		return nil
 	case notification.FieldReplyTo:
 		m.ClearReplyTo()
+		return nil
+	case notification.FieldTag:
+		m.ClearTag()
 		return nil
 	case notification.FieldRequestID:
 		m.ClearRequestID()
@@ -1175,6 +1245,9 @@ func (m *NotificationMutation) ResetField(name string) error {
 		return nil
 	case notification.FieldReplyTo:
 		m.ResetReplyTo()
+		return nil
+	case notification.FieldTag:
+		m.ResetTag()
 		return nil
 	case notification.FieldAddress:
 		m.ResetAddress()

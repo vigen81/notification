@@ -112,6 +112,20 @@ func (nc *NotificationCreate) SetNillableReplyTo(s *string) *NotificationCreate 
 	return nc
 }
 
+// SetTag sets the "tag" field.
+func (nc *NotificationCreate) SetTag(s string) *NotificationCreate {
+	nc.mutation.SetTag(s)
+	return nc
+}
+
+// SetNillableTag sets the "tag" field if the given value is not nil.
+func (nc *NotificationCreate) SetNillableTag(s *string) *NotificationCreate {
+	if s != nil {
+		nc.SetTag(*s)
+	}
+	return nc
+}
+
 // SetAddress sets the "address" field.
 func (nc *NotificationCreate) SetAddress(t types.Address) *NotificationCreate {
 	nc.mutation.SetAddress(t)
@@ -318,6 +332,10 @@ func (nc *NotificationCreate) createSpec() (*Notification, *sqlgraph.CreateSpec)
 	if value, ok := nc.mutation.ReplyTo(); ok {
 		_spec.SetField(notification.FieldReplyTo, field.TypeString, value)
 		_node.ReplyTo = value
+	}
+	if value, ok := nc.mutation.Tag(); ok {
+		_spec.SetField(notification.FieldTag, field.TypeString, value)
+		_node.Tag = value
 	}
 	if value, ok := nc.mutation.Address(); ok {
 		_spec.SetField(notification.FieldAddress, field.TypeString, value)
