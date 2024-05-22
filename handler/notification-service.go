@@ -15,6 +15,28 @@ import (
 
 type NotificationService struct{}
 
+func (s *NotificationService) ListNotifications(ctx context.Context, request *pb.ListNotificationsRequest, list *pb.NotificationList) error {
+	notifications, err := db.Client().Notification.Query().All(ctx)
+	if nil != err {
+		return err
+	}
+
+	for _, notification := range notifications {
+		list.Notifications = append(list.Notifications, &pb.Notification{
+			From:     notification.From,
+			Headline: notification.Headline,
+			Name:     notification.Name,
+			Subject:  notification.Headline,
+			Info: &pb.NotificationInfo{
+				RequestId: notification.RequestID,
+				Tag:       notification.Tag,
+			},
+		})
+	}
+
+	return nil
+}
+
 func (s *NotificationService) Retry(ctx context.Context, info *pb.NotificationInfo, empty *emptypb.Empty) error {
 	message, err := db.Client().
 		Notification.

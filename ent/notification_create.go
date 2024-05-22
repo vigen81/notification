@@ -138,14 +138,6 @@ func (nc *NotificationCreate) SetRequestID(s string) *NotificationCreate {
 	return nc
 }
 
-// SetNillableRequestID sets the "request_id" field if the given value is not nil.
-func (nc *NotificationCreate) SetNillableRequestID(s *string) *NotificationCreate {
-	if s != nil {
-		nc.SetRequestID(*s)
-	}
-	return nc
-}
-
 // SetScheduleTs sets the "schedule_ts" field.
 func (nc *NotificationCreate) SetScheduleTs(i int64) *NotificationCreate {
 	nc.mutation.SetScheduleTs(i)
@@ -263,6 +255,9 @@ func (nc *NotificationCreate) check() error {
 	if _, ok := nc.mutation.Address(); !ok {
 		return &ValidationError{Name: "address", err: errors.New(`ent: missing required field "Notification.address"`)}
 	}
+	if _, ok := nc.mutation.RequestID(); !ok {
+		return &ValidationError{Name: "request_id", err: errors.New(`ent: missing required field "Notification.request_id"`)}
+	}
 	if _, ok := nc.mutation.GetType(); !ok {
 		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "Notification.type"`)}
 	}
@@ -343,7 +338,7 @@ func (nc *NotificationCreate) createSpec() (*Notification, *sqlgraph.CreateSpec)
 	}
 	if value, ok := nc.mutation.RequestID(); ok {
 		_spec.SetField(notification.FieldRequestID, field.TypeString, value)
-		_node.RequestID = &value
+		_node.RequestID = value
 	}
 	if value, ok := nc.mutation.ScheduleTs(); ok {
 		_spec.SetField(notification.FieldScheduleTs, field.TypeInt64, value)

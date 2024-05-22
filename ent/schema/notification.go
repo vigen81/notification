@@ -45,7 +45,7 @@ func (Notification) Fields() []ent.Field {
 
 		// field.String("address"),
 		field.Text("address").GoType(types.Address("")),
-		field.String("request_id").Optional().Nillable(),
+		field.String("request_id"),
 		field.Int64("schedule_ts").Optional().Nillable(),
 		field.Enum("type").Values("SMS", "EMAIL", "PUSH"),
 		field.Enum("status").Values("ACTIVE", "COMPLETED", "CANCEL", "PENDING", "FAILED").Default("PENDING"),

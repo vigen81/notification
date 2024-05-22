@@ -561,7 +561,7 @@ func (m *NotificationMutation) RequestID() (r string, exists bool) {
 // OldRequestID returns the old "request_id" field's value of the Notification entity.
 // If the Notification object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *NotificationMutation) OldRequestID(ctx context.Context) (v *string, err error) {
+func (m *NotificationMutation) OldRequestID(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldRequestID is only allowed on UpdateOne operations")
 	}
@@ -575,22 +575,9 @@ func (m *NotificationMutation) OldRequestID(ctx context.Context) (v *string, err
 	return oldValue.RequestID, nil
 }
 
-// ClearRequestID clears the value of the "request_id" field.
-func (m *NotificationMutation) ClearRequestID() {
-	m.request_id = nil
-	m.clearedFields[notification.FieldRequestID] = struct{}{}
-}
-
-// RequestIDCleared returns if the "request_id" field was cleared in this mutation.
-func (m *NotificationMutation) RequestIDCleared() bool {
-	_, ok := m.clearedFields[notification.FieldRequestID]
-	return ok
-}
-
 // ResetRequestID resets all changes to the "request_id" field.
 func (m *NotificationMutation) ResetRequestID() {
 	m.request_id = nil
-	delete(m.clearedFields, notification.FieldRequestID)
 }
 
 // SetScheduleTs sets the "schedule_ts" field.
@@ -1164,9 +1151,6 @@ func (m *NotificationMutation) ClearedFields() []string {
 	if m.FieldCleared(notification.FieldTag) {
 		fields = append(fields, notification.FieldTag)
 	}
-	if m.FieldCleared(notification.FieldRequestID) {
-		fields = append(fields, notification.FieldRequestID)
-	}
 	if m.FieldCleared(notification.FieldScheduleTs) {
 		fields = append(fields, notification.FieldScheduleTs)
 	}
@@ -1204,9 +1188,6 @@ func (m *NotificationMutation) ClearField(name string) error {
 		return nil
 	case notification.FieldTag:
 		m.ClearTag()
-		return nil
-	case notification.FieldRequestID:
-		m.ClearRequestID()
 		return nil
 	case notification.FieldScheduleTs:
 		m.ClearScheduleTs()

@@ -39,7 +39,7 @@ type Notification struct {
 	// Address holds the value of the "address" field.
 	Address types.Address `json:"address,omitempty"`
 	// RequestID holds the value of the "request_id" field.
-	RequestID *string `json:"request_id,omitempty"`
+	RequestID string `json:"request_id,omitempty"`
 	// ScheduleTs holds the value of the "schedule_ts" field.
 	ScheduleTs *int64 `json:"schedule_ts,omitempty"`
 	// Type holds the value of the "type" field.
@@ -147,8 +147,7 @@ func (n *Notification) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field request_id", values[i])
 			} else if value.Valid {
-				n.RequestID = new(string)
-				*n.RequestID = value.String
+				n.RequestID = value.String
 			}
 		case notification.FieldScheduleTs:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -247,10 +246,8 @@ func (n *Notification) String() string {
 	builder.WriteString("address=")
 	builder.WriteString(fmt.Sprintf("%v", n.Address))
 	builder.WriteString(", ")
-	if v := n.RequestID; v != nil {
-		builder.WriteString("request_id=")
-		builder.WriteString(*v)
-	}
+	builder.WriteString("request_id=")
+	builder.WriteString(n.RequestID)
 	builder.WriteString(", ")
 	if v := n.ScheduleTs; v != nil {
 		builder.WriteString("schedule_ts=")

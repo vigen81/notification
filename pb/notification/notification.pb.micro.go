@@ -44,6 +44,7 @@ type NotificationService interface {
 	Notification(ctx context.Context, in *PushRequest, opts ...client.CallOption) (*emptypb.Empty, error)
 	Retry(ctx context.Context, in *NotificationInfo, opts ...client.CallOption) (*emptypb.Empty, error)
 	Cancel(ctx context.Context, in *CancelRequest, opts ...client.CallOption) (*emptypb.Empty, error)
+	ListNotifications(ctx context.Context, in *ListNotificationsRequest, opts ...client.CallOption) (*NotificationList, error)
 }
 
 type notificationService struct {
@@ -108,6 +109,16 @@ func (c *notificationService) Cancel(ctx context.Context, in *CancelRequest, opt
 	return out, nil
 }
 
+func (c *notificationService) ListNotifications(ctx context.Context, in *ListNotificationsRequest, opts ...client.CallOption) (*NotificationList, error) {
+	req := c.c.NewRequest(c.name, "NotificationService.ListNotifications", in)
+	out := new(NotificationList)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for NotificationService service
 
 type NotificationServiceHandler interface {
@@ -116,6 +127,7 @@ type NotificationServiceHandler interface {
 	Notification(context.Context, *PushRequest, *emptypb.Empty) error
 	Retry(context.Context, *NotificationInfo, *emptypb.Empty) error
 	Cancel(context.Context, *CancelRequest, *emptypb.Empty) error
+	ListNotifications(context.Context, *ListNotificationsRequest, *NotificationList) error
 }
 
 func RegisterNotificationServiceHandler(s server.Server, hdlr NotificationServiceHandler, opts ...server.HandlerOption) error {
@@ -125,6 +137,7 @@ func RegisterNotificationServiceHandler(s server.Server, hdlr NotificationServic
 		Notification(ctx context.Context, in *PushRequest, out *emptypb.Empty) error
 		Retry(ctx context.Context, in *NotificationInfo, out *emptypb.Empty) error
 		Cancel(ctx context.Context, in *CancelRequest, out *emptypb.Empty) error
+		ListNotifications(ctx context.Context, in *ListNotificationsRequest, out *NotificationList) error
 	}
 	type NotificationService struct {
 		notificationService
@@ -155,4 +168,8 @@ func (h *notificationServiceHandler) Retry(ctx context.Context, in *Notification
 
 func (h *notificationServiceHandler) Cancel(ctx context.Context, in *CancelRequest, out *emptypb.Empty) error {
 	return h.NotificationServiceHandler.Cancel(ctx, in, out)
+}
+
+func (h *notificationServiceHandler) ListNotifications(ctx context.Context, in *ListNotificationsRequest, out *NotificationList) error {
+	return h.NotificationServiceHandler.ListNotifications(ctx, in, out)
 }

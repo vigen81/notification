@@ -5,6 +5,7 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"gitlab.com/healthcare-integration/golang/notification-service/ent"
+	"gitlab.com/healthcare-integration/golang/notification-service/ent/migrate"
 	"go-micro.dev/v4/config/reader"
 	"go-micro.dev/v4/logger"
 	"os"
@@ -113,13 +114,13 @@ func Connect() (err error) {
 	}
 	// return
 	// Restart the auto migration tool.
-	//if err := db.Debug().Schema.Create(context.Background(),
-	//	migrate.WithDropIndex(true),
-	//	migrate.WithDropColumn(true),
-	//	migrate.WithForeignKeys(true),
-	//); err != nil {
-	//	logger.Fatalf("failed creating schema resources: %v", err)
-	//}
+	if err := db.Debug().Schema.Create(context.Background(),
+		migrate.WithDropIndex(true),
+		migrate.WithDropColumn(true),
+		migrate.WithForeignKeys(true),
+	); err != nil {
+		logger.Fatalf("failed creating schema resources: %v", err)
+	}
 
 	return nil
 }

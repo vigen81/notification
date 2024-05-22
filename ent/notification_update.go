@@ -178,12 +178,6 @@ func (nu *NotificationUpdate) SetNillableRequestID(s *string) *NotificationUpdat
 	return nu
 }
 
-// ClearRequestID clears the value of the "request_id" field.
-func (nu *NotificationUpdate) ClearRequestID() *NotificationUpdate {
-	nu.mutation.ClearRequestID()
-	return nu
-}
-
 // SetScheduleTs sets the "schedule_ts" field.
 func (nu *NotificationUpdate) SetScheduleTs(i int64) *NotificationUpdate {
 	nu.mutation.ResetScheduleTs()
@@ -381,9 +375,6 @@ func (nu *NotificationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := nu.mutation.RequestID(); ok {
 		_spec.SetField(notification.FieldRequestID, field.TypeString, value)
 	}
-	if nu.mutation.RequestIDCleared() {
-		_spec.ClearField(notification.FieldRequestID, field.TypeString)
-	}
 	if value, ok := nu.mutation.ScheduleTs(); ok {
 		_spec.SetField(notification.FieldScheduleTs, field.TypeInt64, value)
 	}
@@ -576,12 +567,6 @@ func (nuo *NotificationUpdateOne) SetNillableRequestID(s *string) *NotificationU
 	if s != nil {
 		nuo.SetRequestID(*s)
 	}
-	return nuo
-}
-
-// ClearRequestID clears the value of the "request_id" field.
-func (nuo *NotificationUpdateOne) ClearRequestID() *NotificationUpdateOne {
-	nuo.mutation.ClearRequestID()
 	return nuo
 }
 
@@ -811,9 +796,6 @@ func (nuo *NotificationUpdateOne) sqlSave(ctx context.Context) (_node *Notificat
 	}
 	if value, ok := nuo.mutation.RequestID(); ok {
 		_spec.SetField(notification.FieldRequestID, field.TypeString, value)
-	}
-	if nuo.mutation.RequestIDCleared() {
-		_spec.ClearField(notification.FieldRequestID, field.TypeString)
 	}
 	if value, ok := nuo.mutation.ScheduleTs(); ok {
 		_spec.SetField(notification.FieldScheduleTs, field.TypeInt64, value)

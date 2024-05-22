@@ -760,16 +760,6 @@ func RequestIDHasSuffix(v string) predicate.Notification {
 	return predicate.Notification(sql.FieldHasSuffix(FieldRequestID, v))
 }
 
-// RequestIDIsNil applies the IsNil predicate on the "request_id" field.
-func RequestIDIsNil() predicate.Notification {
-	return predicate.Notification(sql.FieldIsNull(FieldRequestID))
-}
-
-// RequestIDNotNil applies the NotNil predicate on the "request_id" field.
-func RequestIDNotNil() predicate.Notification {
-	return predicate.Notification(sql.FieldNotNull(FieldRequestID))
-}
-
 // RequestIDEqualFold applies the EqualFold predicate on the "request_id" field.
 func RequestIDEqualFold(v string) predicate.Notification {
 	return predicate.Notification(sql.FieldEqualFold(FieldRequestID, v))

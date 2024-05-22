@@ -20,7 +20,7 @@ var (
 		{Name: "reply_to", Type: field.TypeString, Nullable: true},
 		{Name: "tag", Type: field.TypeString, Nullable: true},
 		{Name: "address", Type: field.TypeString, Size: 2147483647},
-		{Name: "request_id", Type: field.TypeString, Nullable: true},
+		{Name: "request_id", Type: field.TypeString},
 		{Name: "schedule_ts", Type: field.TypeInt64, Nullable: true},
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"SMS", "EMAIL", "PUSH"}},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"ACTIVE", "COMPLETED", "CANCEL", "PENDING", "FAILED"}, Default: "PENDING"},
