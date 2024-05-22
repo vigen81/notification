@@ -41,6 +41,7 @@ func (Notification) Fields() []ent.Field {
 		field.String("name").Optional(),
 		field.String("from").Optional(),
 		field.String("reply_to").Optional(),
+		field.String("tag").Optional(),
 
 		// field.String("address"),
 		field.Text("address").GoType(types.Address("")),

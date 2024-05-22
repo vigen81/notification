@@ -6,6 +6,7 @@ package notification
 import (
 	fmt "fmt"
 	proto "google.golang.org/protobuf/proto"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	_ "google.golang.org/protobuf/types/known/structpb"
 	_ "google.golang.org/protobuf/types/known/timestamppb"
 	math "math"
@@ -38,10 +39,11 @@ func NewNotificationServiceEndpoints() []*api.Endpoint {
 // Client API for NotificationService service
 
 type NotificationService interface {
-	Sms(ctx context.Context, in *SmsRequest, opts ...client.CallOption) (*SmsResponse, error)
-	Email(ctx context.Context, in *EmailRequest, opts ...client.CallOption) (*EmailResponse, error)
-	Notification(ctx context.Context, in *PushRequest, opts ...client.CallOption) (*PushResponse, error)
-	Retry(ctx context.Context, in *RetryRequest, opts ...client.CallOption) (*RetryResponse, error)
+	Sms(ctx context.Context, in *SmsRequest, opts ...client.CallOption) (*emptypb.Empty, error)
+	Email(ctx context.Context, in *EmailRequest, opts ...client.CallOption) (*emptypb.Empty, error)
+	Notification(ctx context.Context, in *PushRequest, opts ...client.CallOption) (*emptypb.Empty, error)
+	Retry(ctx context.Context, in *NotificationInfo, opts ...client.CallOption) (*emptypb.Empty, error)
+	Cancel(ctx context.Context, in *CancelRequest, opts ...client.CallOption) (*emptypb.Empty, error)
 }
 
 type notificationService struct {
@@ -56,9 +58,9 @@ func NewNotificationService(name string, c client.Client) NotificationService {
 	}
 }
 
-func (c *notificationService) Sms(ctx context.Context, in *SmsRequest, opts ...client.CallOption) (*SmsResponse, error) {
+func (c *notificationService) Sms(ctx context.Context, in *SmsRequest, opts ...client.CallOption) (*emptypb.Empty, error) {
 	req := c.c.NewRequest(c.name, "NotificationService.Sms", in)
-	out := new(SmsResponse)
+	out := new(emptypb.Empty)
 	err := c.c.Call(ctx, req, out, opts...)
 	if err != nil {
 		return nil, err
@@ -66,9 +68,9 @@ func (c *notificationService) Sms(ctx context.Context, in *SmsRequest, opts ...c
 	return out, nil
 }
 
-func (c *notificationService) Email(ctx context.Context, in *EmailRequest, opts ...client.CallOption) (*EmailResponse, error) {
+func (c *notificationService) Email(ctx context.Context, in *EmailRequest, opts ...client.CallOption) (*emptypb.Empty, error) {
 	req := c.c.NewRequest(c.name, "NotificationService.Email", in)
-	out := new(EmailResponse)
+	out := new(emptypb.Empty)
 	err := c.c.Call(ctx, req, out, opts...)
 	if err != nil {
 		return nil, err
@@ -76,9 +78,9 @@ func (c *notificationService) Email(ctx context.Context, in *EmailRequest, opts 
 	return out, nil
 }
 
-func (c *notificationService) Notification(ctx context.Context, in *PushRequest, opts ...client.CallOption) (*PushResponse, error) {
+func (c *notificationService) Notification(ctx context.Context, in *PushRequest, opts ...client.CallOption) (*emptypb.Empty, error) {
 	req := c.c.NewRequest(c.name, "NotificationService.Notification", in)
-	out := new(PushResponse)
+	out := new(emptypb.Empty)
 	err := c.c.Call(ctx, req, out, opts...)
 	if err != nil {
 		return nil, err
@@ -86,9 +88,19 @@ func (c *notificationService) Notification(ctx context.Context, in *PushRequest,
 	return out, nil
 }
 
-func (c *notificationService) Retry(ctx context.Context, in *RetryRequest, opts ...client.CallOption) (*RetryResponse, error) {
+func (c *notificationService) Retry(ctx context.Context, in *NotificationInfo, opts ...client.CallOption) (*emptypb.Empty, error) {
 	req := c.c.NewRequest(c.name, "NotificationService.Retry", in)
-	out := new(RetryResponse)
+	out := new(emptypb.Empty)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *notificationService) Cancel(ctx context.Context, in *CancelRequest, opts ...client.CallOption) (*emptypb.Empty, error) {
+	req := c.c.NewRequest(c.name, "NotificationService.Cancel", in)
+	out := new(emptypb.Empty)
 	err := c.c.Call(ctx, req, out, opts...)
 	if err != nil {
 		return nil, err
@@ -99,18 +111,20 @@ func (c *notificationService) Retry(ctx context.Context, in *RetryRequest, opts 
 // Server API for NotificationService service
 
 type NotificationServiceHandler interface {
-	Sms(context.Context, *SmsRequest, *SmsResponse) error
-	Email(context.Context, *EmailRequest, *EmailResponse) error
-	Notification(context.Context, *PushRequest, *PushResponse) error
-	Retry(context.Context, *RetryRequest, *RetryResponse) error
+	Sms(context.Context, *SmsRequest, *emptypb.Empty) error
+	Email(context.Context, *EmailRequest, *emptypb.Empty) error
+	Notification(context.Context, *PushRequest, *emptypb.Empty) error
+	Retry(context.Context, *NotificationInfo, *emptypb.Empty) error
+	Cancel(context.Context, *CancelRequest, *emptypb.Empty) error
 }
 
 func RegisterNotificationServiceHandler(s server.Server, hdlr NotificationServiceHandler, opts ...server.HandlerOption) error {
 	type notificationService interface {
-		Sms(ctx context.Context, in *SmsRequest, out *SmsResponse) error
-		Email(ctx context.Context, in *EmailRequest, out *EmailResponse) error
-		Notification(ctx context.Context, in *PushRequest, out *PushResponse) error
-		Retry(ctx context.Context, in *RetryRequest, out *RetryResponse) error
+		Sms(ctx context.Context, in *SmsRequest, out *emptypb.Empty) error
+		Email(ctx context.Context, in *EmailRequest, out *emptypb.Empty) error
+		Notification(ctx context.Context, in *PushRequest, out *emptypb.Empty) error
+		Retry(ctx context.Context, in *NotificationInfo, out *emptypb.Empty) error
+		Cancel(ctx context.Context, in *CancelRequest, out *emptypb.Empty) error
 	}
 	type NotificationService struct {
 		notificationService
@@ -123,18 +137,22 @@ type notificationServiceHandler struct {
 	NotificationServiceHandler
 }
 
-func (h *notificationServiceHandler) Sms(ctx context.Context, in *SmsRequest, out *SmsResponse) error {
+func (h *notificationServiceHandler) Sms(ctx context.Context, in *SmsRequest, out *emptypb.Empty) error {
 	return h.NotificationServiceHandler.Sms(ctx, in, out)
 }
 
-func (h *notificationServiceHandler) Email(ctx context.Context, in *EmailRequest, out *EmailResponse) error {
+func (h *notificationServiceHandler) Email(ctx context.Context, in *EmailRequest, out *emptypb.Empty) error {
 	return h.NotificationServiceHandler.Email(ctx, in, out)
 }
 
-func (h *notificationServiceHandler) Notification(ctx context.Context, in *PushRequest, out *PushResponse) error {
+func (h *notificationServiceHandler) Notification(ctx context.Context, in *PushRequest, out *emptypb.Empty) error {
 	return h.NotificationServiceHandler.Notification(ctx, in, out)
 }
 
-func (h *notificationServiceHandler) Retry(ctx context.Context, in *RetryRequest, out *RetryResponse) error {
+func (h *notificationServiceHandler) Retry(ctx context.Context, in *NotificationInfo, out *emptypb.Empty) error {
 	return h.NotificationServiceHandler.Retry(ctx, in, out)
+}
+
+func (h *notificationServiceHandler) Cancel(ctx context.Context, in *CancelRequest, out *emptypb.Empty) error {
+	return h.NotificationServiceHandler.Cancel(ctx, in, out)
 }

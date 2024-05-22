@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"gitlab.com/healthcare-integration/golang/notification-service/ent/notification"
 	"gitlab.com/healthcare-integration/golang/notification-service/ent/schema"
@@ -14,44 +15,47 @@ import (
 
 type NotificationService struct{}
 
-func checkRetry(requestID *string) bool {
-	if nil == requestID {
-		return false
-	}
-	exits, _ := db.Client().Notification.Query().Where(notification.RequestID(*requestID)).Exist(context.Background())
-	return exits
-}
-
-func (s *NotificationService) Retry(ctx context.Context, request *pb.RetryRequest, response *pb.RetryResponse) error {
-
+func (s *NotificationService) Retry(ctx context.Context, info *pb.NotificationInfo, empty *emptypb.Empty) error {
 	message, err := db.Client().
 		Notification.
 		Query().
 		Where(
-			notification.ID(int(request.MessageId)),
+			notification.RequestID(info.RequestId),
 		).Only(context.Background())
 	if nil != err {
 		return err
 	}
 	return processing.Processors.Handle(message)
-
 }
 
-func (*NotificationService) Email(c context.Context, request *pb.EmailRequest, response *pb.EmailResponse) error {
-	return notificationServiceHandler{}.Email(c, request, response)
+func (s *NotificationService) Cancel(ctx context.Context, request *pb.CancelRequest, empty *emptypb.Empty) error {
+	_, err := db.Client().Notification.Update().
+		Where(notification.RequestID(request.RequestId)).
+		SetStatus(notification.StatusCANCEL).
+		Save(context.Background())
+	return err
 }
-func (*NotificationService) Sms(c context.Context, request *pb.SmsRequest, response *pb.SmsResponse) error {
-	return notificationServiceHandler{}.Sms(c, request, response)
+
+func checkRetry(requestID string) bool {
+	exits, _ := db.Client().Notification.Query().Where(notification.RequestID(requestID)).Exist(context.Background())
+	return exits
 }
-func (*NotificationService) Notification(c context.Context, request *pb.PushRequest, response *pb.PushResponse) error {
+
+func (*NotificationService) Email(c context.Context, request *pb.EmailRequest, _ *emptypb.Empty) error {
+	return notificationServiceHandler{}.Email(c, request)
+}
+func (*NotificationService) Sms(c context.Context, request *pb.SmsRequest, _ *emptypb.Empty) error {
+	return notificationServiceHandler{}.Sms(c, request)
+}
+func (*NotificationService) Notification(c context.Context, request *pb.PushRequest, response *emptypb.Empty) error {
 	return notificationServiceHandler{}.Notification(c, request, response)
 }
 
 type notificationServiceHandler struct{}
 
-func (n notificationServiceHandler) Email(_ context.Context, request *pb.EmailRequest, response *pb.EmailResponse) error {
+func (n notificationServiceHandler) Email(_ context.Context, request *pb.EmailRequest) error {
 
-	if checkRetry(request.RequestId) {
+	if checkRetry(request.Info.RequestId) {
 		return nil
 	}
 
@@ -64,7 +68,7 @@ func (n notificationServiceHandler) Email(_ context.Context, request *pb.EmailRe
 		SetHeadline(request.Subject).
 		SetName(request.Name).
 		SetStatus(notification.StatusACTIVE).
-		SetNillableRequestID(request.RequestId)
+		SetRequestID(request.Info.RequestId)
 
 	if nil != request.Meta {
 		meta := &schema.NotificationMeta{
@@ -105,10 +109,10 @@ func (n notificationServiceHandler) Email(_ context.Context, request *pb.EmailRe
 	return err
 }
 
-func (n notificationServiceHandler) Sms(_ context.Context, request *pb.SmsRequest, response *pb.SmsResponse) error {
+func (n notificationServiceHandler) Sms(_ context.Context, request *pb.SmsRequest) error {
 	// TODO implement me
 
-	if checkRetry(request.RequestId) {
+	if checkRetry(request.Info.RequestId) {
 		return nil
 	}
 
@@ -118,7 +122,7 @@ func (n notificationServiceHandler) Sms(_ context.Context, request *pb.SmsReques
 		SetType(notification.TypeSMS).
 		SetStatus(notification.StatusACTIVE).
 		SetMeta(&schema.NotificationMeta{Service: request.Service}).
-		SetNillableRequestID(request.RequestId)
+		SetRequestID(request.Info.RequestId)
 
 	if nil != request.Schedule {
 		item.
@@ -141,9 +145,9 @@ func (n notificationServiceHandler) Sms(_ context.Context, request *pb.SmsReques
 	return err
 }
 
-func (n notificationServiceHandler) Notification(_ context.Context, request *pb.PushRequest, response *pb.PushResponse) error {
+func (n notificationServiceHandler) Notification(_ context.Context, request *pb.PushRequest, _ *emptypb.Empty) error {
 
-	if checkRetry(request.RequestId) {
+	if checkRetry(request.Info.RequestId) {
 		return nil
 	}
 
@@ -156,7 +160,7 @@ func (n notificationServiceHandler) Notification(_ context.Context, request *pb.
 		SetMeta(&schema.NotificationMeta{
 			Data: json.RawMessage(request.Meta.Data),
 		}).
-		SetNillableRequestID(request.RequestId)
+		SetRequestID(request.Info.RequestId)
 
 	if nil != request.Schedule {
 		item.
