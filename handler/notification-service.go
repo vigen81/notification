@@ -27,17 +27,22 @@ func (s *NotificationService) CancelPrefix(ctx context.Context, request *pb.Canc
 }
 
 func (s *NotificationService) ListNotifications(ctx context.Context, request *pb.ListNotificationsRequest, list *pb.NotificationList) error {
-	notifications, err := db.Client().Notification.Query().All(ctx)
+	notifications, err := db.Client().Notification.Query().Where(
+		notification.RequestIDHasPrefix(request.Prefix),
+	).All(ctx)
+
 	if nil != err {
 		return err
 	}
 
 	for _, notification := range notifications {
 		list.Notifications = append(list.Notifications, &pb.Notification{
-			From:     notification.From,
-			Headline: notification.Headline,
-			Name:     notification.Name,
-			Subject:  notification.Headline,
+			From:         notification.From,
+			Headline:     notification.Headline,
+			Name:         notification.Name,
+			Subject:      notification.Headline,
+			Status:       notification.Status.String(),
+			ErrorMessage: notification.ErrorMessage,
 			Info: &pb.NotificationInfo{
 				RequestId: notification.RequestID,
 				Tag:       notification.Tag,
