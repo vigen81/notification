@@ -2,6 +2,7 @@ package schema
 
 import (
 	"encoding/json"
+	"entgo.io/ent/dialect/entsql"
 
 	"entgo.io/ent"
 	"entgo.io/ent/schema/field"
@@ -45,7 +46,7 @@ func (Notification) Fields() []ent.Field {
 
 		// field.String("address"),
 		field.Text("address").GoType(types.Address("")),
-		field.String("request_id"),
+		field.String("request_id").Unique(),
 		field.Int64("schedule_ts").Optional().Nillable(),
 		field.Enum("type").Values("SMS", "EMAIL", "PUSH"),
 		field.Enum("status").Values("ACTIVE", "COMPLETED", "CANCEL", "PENDING", "FAILED").Default("PENDING"),
@@ -67,7 +68,7 @@ func (Notification) Edges() []ent.Edge {
 
 func (Notification) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("request_id").Unique(),
+		index.Fields("request_id").Annotations(entsql.Prefix(20)),
 		index.Fields("schedule_ts", "status"),
 	}
 }

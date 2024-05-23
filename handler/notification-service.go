@@ -15,6 +15,17 @@ import (
 
 type NotificationService struct{}
 
+func (s *NotificationService) CancelPrefix(ctx context.Context, request *pb.CancelPrefixRequest, empty *emptypb.Empty) error {
+	err := db.Client().Notification.Update().
+		Where(
+			notification.RequestIDHasPrefix(request.Prefix),
+			notification.StatusEQ(notification.StatusPENDING),
+		).
+		SetStatus(notification.StatusCANCEL).
+		Exec(context.Background())
+	return err
+}
+
 func (s *NotificationService) ListNotifications(ctx context.Context, request *pb.ListNotificationsRequest, list *pb.NotificationList) error {
 	notifications, err := db.Client().Notification.Query().All(ctx)
 	if nil != err {
@@ -52,7 +63,7 @@ func (s *NotificationService) Retry(ctx context.Context, info *pb.NotificationIn
 
 func (s *NotificationService) Cancel(ctx context.Context, request *pb.CancelRequest, empty *emptypb.Empty) error {
 	_, err := db.Client().Notification.Update().
-		Where(notification.RequestID(request.RequestId)).
+		Where(notification.RequestIDIn(request.RequestIds...)).
 		SetStatus(notification.StatusCANCEL).
 		Save(context.Background())
 	return err

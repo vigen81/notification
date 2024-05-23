@@ -3,6 +3,7 @@
 package migrate
 
 import (
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/dialect/sql/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -20,7 +21,7 @@ var (
 		{Name: "reply_to", Type: field.TypeString, Nullable: true},
 		{Name: "tag", Type: field.TypeString, Nullable: true},
 		{Name: "address", Type: field.TypeString, Size: 2147483647},
-		{Name: "request_id", Type: field.TypeString},
+		{Name: "request_id", Type: field.TypeString, Unique: true},
 		{Name: "schedule_ts", Type: field.TypeInt64, Nullable: true},
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"SMS", "EMAIL", "PUSH"}},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"ACTIVE", "COMPLETED", "CANCEL", "PENDING", "FAILED"}, Default: "PENDING"},
@@ -35,8 +36,11 @@ var (
 		Indexes: []*schema.Index{
 			{
 				Name:    "notification_request_id",
-				Unique:  true,
+				Unique:  false,
 				Columns: []*schema.Column{NotificationsColumns[10]},
+				Annotation: &entsql.IndexAnnotation{
+					Prefix: 20,
+				},
 			},
 			{
 				Name:    "notification_schedule_ts_status",
