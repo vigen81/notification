@@ -81,10 +81,10 @@ func (s *Api) Do(notification *ent.Notification) (err error) {
 	request := sendgrid.GetRequest(config.Key, "/v3/mail/send", "https://api.sendgrid.com")
 	request.Method = "POST"
 
-	to := mail.NewEmail(notification.Name, notification.Address.String())
+	to := mail.NewEmail(notification.Address.String(), notification.Address.String())
 
-	from := mail.NewEmail(notification.From, notification.From)
-	replyTo := mail.NewEmail(notification.ReplyTo, notification.ReplyTo)
+	from := mail.NewEmail(notification.Name, notification.From)
+	replyTo := mail.NewEmail(notification.Name, notification.ReplyTo)
 
 	body := mail.NewV3Mail()
 	body.SetReplyTo(replyTo)
