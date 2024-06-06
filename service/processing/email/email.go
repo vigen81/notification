@@ -83,8 +83,8 @@ func (s *Api) Do(notification *ent.Notification) (err error) {
 
 	to := mail.NewEmail(notification.Name, notification.Address.String())
 
-	from := mail.NewEmail(config.Name, notification.From)
-	replyTo := mail.NewEmail(config.Name, notification.ReplyTo)
+	from := mail.NewEmail(notification.From, notification.From)
+	replyTo := mail.NewEmail(notification.ReplyTo, notification.ReplyTo)
 
 	body := mail.NewV3Mail()
 	body.SetReplyTo(replyTo)
