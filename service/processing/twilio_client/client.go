@@ -28,11 +28,11 @@ type Config struct {
 	AuthToken  string `json:"auth_token"`
 }
 
-func Sms(to, payload, from string) (data string, err error) {
+func Sms(to, payload, service string) (data string, err error) {
 
 	body := &openapi.CreateMessageParams{}
 	body.SetTo(to)
-	body.SetMessagingServiceSid(from)
+	body.SetMessagingServiceSid(service)
 	body.SetBody(payload)
 	resp, err := getClient().Client.Api.CreateMessage(body)
 	if nil != err {
