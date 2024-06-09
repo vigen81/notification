@@ -234,6 +234,8 @@ github.com/zclconf/go-cty v1.14.2 h1:kTG7lqmBou0Zkx35r6HJHUQTvaRPr5bIAf3AoHS0izI
 github.com/zclconf/go-cty v1.14.2/go.mod h1:VvMs5i0vgZdhYawQNq5kePSpLAoz8u1xvZgrPIxfnZE=
 gitlab.com/healthcare-integration/common v0.0.0-20231125024937-884f1ffa9d9d h1:TxOrnvVXR5g5B++YojR85bD3TU9+Co/OYMJskUc1A2c=
 gitlab.com/healthcare-integration/common v0.0.0-20231125024937-884f1ffa9d9d/go.mod h1:S3NZnuC0iG4aOEL/gRzi5x3+Cs8u4HJzNWa+hdfvTD0=
+gitlab.com/healthcare-integration/common v0.0.0-20240609012020-57e0188fb667 h1:Vowg4volJA/XkIUw9NWj+lh7009cAHLYVwjMcrfNYXw=
+gitlab.com/healthcare-integration/common v0.0.0-20240609012020-57e0188fb667/go.mod h1:zZ4iU6SLt/MdHv5ZnDKD6p8Xa630vMnzXYC4Q77aI/Y=
 go-micro.dev/v4 v4.10.2 h1:GWQf1+FcAiMf1yca3P09RNjB31Xtk0C5HiKHSpq/2qA=
 go-micro.dev/v4 v4.10.2/go.mod h1:RV2AolXjTAil9Xm82QCMo1gknuZwD61oMUH14wJpECk=
 go.etcd.io/etcd/api/v3 v3.5.11 h1:B54KwXbWDHyD3XYAwprxNzTe7vlhR69LuBgZnMVvS7E=

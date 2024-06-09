@@ -12,7 +12,7 @@ require (
 	github.com/jasonlvhit/gocron v0.0.1
 	github.com/sendgrid/sendgrid-go v3.14.0+incompatible
 	github.com/twilio/twilio-go v1.17.0
-	gitlab.com/healthcare-integration/common v0.0.0-20231125024937-884f1ffa9d9d
+	gitlab.com/healthcare-integration/common v0.0.0-20240609012020-57e0188fb667
 	go-micro.dev/v4 v4.10.2
 	google.golang.org/protobuf v1.32.0
 )
