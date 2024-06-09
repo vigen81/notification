@@ -224,8 +224,8 @@ github.com/yukitsune/lokirus v1.0.1 h1:w8BbIJVBFoaF6M6XimwJLDc7sw3wsFbQp3OxdQZCN
 github.com/yukitsune/lokirus v1.0.1/go.mod h1:rcw/P3XPHGSMf20+/deZ2m3z0gU0L77fIt7Wd3GlvhQ=
 github.com/zclconf/go-cty v1.14.2 h1:kTG7lqmBou0Zkx35r6HJHUQTvaRPr5bIAf3AoHS0izI=
 github.com/zclconf/go-cty v1.14.2/go.mod h1:VvMs5i0vgZdhYawQNq5kePSpLAoz8u1xvZgrPIxfnZE=
-gitlab.com/healthcare-integration/common v0.0.0-20240609012020-57e0188fb667 h1:Vowg4volJA/XkIUw9NWj+lh7009cAHLYVwjMcrfNYXw=
-gitlab.com/healthcare-integration/common v0.0.0-20240609012020-57e0188fb667/go.mod h1:zZ4iU6SLt/MdHv5ZnDKD6p8Xa630vMnzXYC4Q77aI/Y=
+gitlab.com/healthcare-integration/common v0.0.0-20240609012533-5af7024e11f3 h1:cM5opbiHiFb+cKYYy73DfNJsHp0CTeQfmcT0hBzWLhY=
+gitlab.com/healthcare-integration/common v0.0.0-20240609012533-5af7024e11f3/go.mod h1:UE8YHG7p8IlGX5JJd+yMCYfWRQPDMBbrOulGis4VYOI=
 go-micro.dev/v4 v4.10.2 h1:GWQf1+FcAiMf1yca3P09RNjB31Xtk0C5HiKHSpq/2qA=
 go-micro.dev/v4 v4.10.2/go.mod h1:RV2AolXjTAil9Xm82QCMo1gknuZwD61oMUH14wJpECk=
 go.etcd.io/etcd/api/v3 v3.5.11 h1:B54KwXbWDHyD3XYAwprxNzTe7vlhR69LuBgZnMVvS7E=
