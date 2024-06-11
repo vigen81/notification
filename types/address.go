@@ -10,12 +10,12 @@ type Address string
 func NewAddress(s string) Address {
 	return Address(s)
 }
-func (a *Address) String() string {
-	return string(*a)
+func (a Address) String() string {
+	return string(a)
 }
 
-func (a *Address) Value() (driver.Value, error) {
-	return crypt.Encode(string(*a))
+func (a Address) Value() (driver.Value, error) {
+	return crypt.Encode(a.String())
 }
 
 func (a *Address) Scan(src interface{}) error {
