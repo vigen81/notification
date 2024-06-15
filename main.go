@@ -38,7 +38,7 @@ func main() {
 
 	err = bootstrap.Init(
 		bootstrap.WithService(serviceName),
-		bootstrap.WithConfigServiceDSN("config-srv:8010"),
+		bootstrap.WithConfigServiceDSN("config-service:8080"),
 		bootstrap.WithLogger(true),
 		bootstrap.WithRegistry(),
 	)
