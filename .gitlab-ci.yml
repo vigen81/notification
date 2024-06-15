@@ -56,7 +56,7 @@ deploy-dev:
     - git config advice.mergeConflict false
   script:
     - git checkout -B master
-    - git pull origin master --rebase
+    - git reset --hard origin/master
     - cd dev/notification-service
     - kustomize edit set image $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
     - cat kustomization.yaml
