@@ -56,13 +56,12 @@ deploy-dev:
     - git config advice.mergeConflict false
   script:
     - git checkout -B master
-    - git reset --hard origin/master
+    - git pull origin master --force
     - cd dev/notification-service
     - kustomize edit set image $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
     - cat kustomization.yaml
     - git commit -am '[skip ci] DEV image update'
     - git push origin master
-  when: manual
   only:
     - master
     - dev
