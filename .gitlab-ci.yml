@@ -49,7 +49,7 @@ deploy-dev:
     - mv kustomize /usr/local/bin/
     - echo ${CI_USERNAME}
     - echo ${CI_PUSH_TOKEN}
-    - mdkir -p /code/data
+    - mkdir -p /code/data
     - cd /code/data
     - git clone https://${CI_USERNAME}:${CI_PUSH_TOKEN}@gitlab.com/healthcare-integration/gitops.git ./
     - git config --global user.email "gitlab@gitlab.com"
