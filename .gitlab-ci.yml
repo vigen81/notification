@@ -28,13 +28,13 @@ build:
   # All other branches are tagged with the escaped branch name (commit ref slug)
   script:
     - |
-        tag=":$CI_COMMIT_SHORT_SHA"
+        tag="$CI_COMMIT_SHORT_SHA"
         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
     -  |
       echo $BOOT_USER $BOOT_TOKEN
       echo "$CI_COMMIT_BRANCH" $CI_COMMIT_BRANCH
-    - docker build --build-arg gitlab_user="$BOOT_USER" --build-arg gitlab_personal_token="$BOOT_TOKEN" --pull -t "$CI_REGISTRY_IMAGE${tag}" .
-    - docker push "$CI_REGISTRY_IMAGE${tag}"
+    - docker build --build-arg gitlab_user="$BOOT_USER" --build-arg gitlab_personal_token="$BOOT_TOKEN" --pull -t "$CI_REGISTRY_IMAGE:${tag}" .
+    - docker push "$CI_REGISTRY_IMAGE:${tag}"
   # Run this job in a branch where a Dockerfile exists
   only:
     - master
@@ -53,6 +53,7 @@ deploy-dev:
     - git config --global user.email "gitlab@gitlab.com"
     - git config --global user.name "GitLab CI/CD"
     - git config pull.rebase true
+    - git config advice.mergeConflict false
   script:
     - git checkout -B master
     - git pull origin master
