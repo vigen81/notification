@@ -61,7 +61,7 @@ deploy-dev:
   script:
     - git checkout -B master
     - git pull origin master
-    - cd dev/notifications-service
+    - cd dev/notification-service
     - kustomize edit set image $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
     - cat kustomization.yaml
     - git commit -am '[skip ci] DEV image update'
