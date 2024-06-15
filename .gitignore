@@ -1,4 +1,1 @@
-# don't commit the service binary to vcs
-volumes
-docker-compose.yml
 .idea
