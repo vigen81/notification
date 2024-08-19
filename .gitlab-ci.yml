@@ -28,8 +28,8 @@ build:
   # All other branches are tagged with the escaped branch name (commit ref slug)
   script:
     - |
-        tag="$CI_COMMIT_SHORT_SHA"
-        echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+      tag="$CI_COMMIT_SHORT_SHA"
+      echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
     -  |
       echo $BOOT_USER $BOOT_TOKEN
       echo "$CI_COMMIT_BRANCH" $CI_COMMIT_BRANCH
@@ -43,26 +43,23 @@ build:
 deploy-dev:
   stage: deploy-dev
   image: alpine:latest
+  variables:
+    NS: dev/golang
   before_script:
-    - apk add --no-cache git curl bash
-    - curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
-    - mv kustomize /usr/local/bin/
-    - echo ${CI_USERNAME}
-    - echo ${CI_PUSH_TOKEN}
+    - apk add --no-cache git curl bash yq
     - mkdir -p /code/data
     - cd /code/data
     - git clone https://${CI_USERNAME}:${CI_PUSH_TOKEN}@gitlab.com/healthcare-integration/gitops.git ./
     - git config --global user.email "gitlab@gitlab.com"
     - git config --global user.name "GitLab CI/CD"
-    - git config pull.rebase true
-    - git config advice.mergeConflict false
-  script:
-    - git checkout -B master
+    - git fetch
+    - git switch master
+    - git reset --hard origin/master
     - git pull origin master
-    - cd dev/notification-service
-    - kustomize edit set image $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
-    - cat kustomization.yaml
-    - git commit -am '[skip ci] DEV image update'
+  script:
+    - cd ${NS}/${CI_PROJECT_NAME}
+    - yq -i '.image.tag = "'${CI_COMMIT_SHORT_SHA}'"' values.yaml
+    - git commit -am '[skip ci] ${ENV} image update'
     - git push origin master
   only:
     - master
