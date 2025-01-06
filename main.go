@@ -57,13 +57,13 @@ func main() {
 		micro.Registry(bootstrap.Registry()),
 		micro.RegisterTTL(time.Second*60),
 		micro.RegisterInterval(time.Second*60),
-		micro.WrapHandler(bootstrap.TcpWrapper),
 		micro.BeforeStart(func() error {
 			return configure()
 		}),
 		micro.AfterStart(func() error {
 			return task.Background()
 		}),
+		micro.WrapHandler(bootstrap.TcpWrapper),
 	)
 
 	// Register handler
