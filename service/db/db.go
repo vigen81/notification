@@ -60,7 +60,7 @@ type database struct {
 var db *ent.Client
 
 func Client() *ent.Client {
-	return db.Debug()
+	return db
 }
 
 var params database
