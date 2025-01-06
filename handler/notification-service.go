@@ -35,17 +35,17 @@ func (s *NotificationService) ListNotifications(ctx context.Context, request *pb
 		return err
 	}
 
-	for _, notification := range notifications {
+	for _, item := range notifications {
 		list.Notifications = append(list.Notifications, &pb.Notification{
-			From:         notification.From,
-			Headline:     notification.Headline,
-			Name:         notification.Name,
-			Subject:      notification.Headline,
-			Status:       notification.Status.String(),
-			ErrorMessage: notification.ErrorMessage,
+			From:         item.From,
+			Headline:     item.Headline,
+			Name:         item.Name,
+			Subject:      item.Headline,
+			Status:       item.Status.String(),
+			ErrorMessage: item.ErrorMessage,
 			Info: &pb.NotificationInfo{
-				RequestId: notification.RequestID,
-				Tag:       notification.Tag,
+				RequestId: item.RequestID,
+				Tag:       item.Tag,
 			},
 		})
 	}
