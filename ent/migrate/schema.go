@@ -15,6 +15,7 @@ var (
 		{Name: "create_time", Type: field.TypeTime},
 		{Name: "update_time", Type: field.TypeTime},
 		{Name: "body", Type: field.TypeString, Size: 2147483647},
+		{Name: "tenant_id", Type: field.TypeInt64},
 		{Name: "headline", Type: field.TypeString, Nullable: true},
 		{Name: "name", Type: field.TypeString, Nullable: true},
 		{Name: "from", Type: field.TypeString, Nullable: true},
@@ -37,7 +38,7 @@ var (
 			{
 				Name:    "notification_request_id",
 				Unique:  false,
-				Columns: []*schema.Column{NotificationsColumns[10]},
+				Columns: []*schema.Column{NotificationsColumns[11]},
 				Annotation: &entsql.IndexAnnotation{
 					Prefix: 20,
 				},
@@ -45,7 +46,7 @@ var (
 			{
 				Name:    "notification_schedule_ts_status",
 				Unique:  false,
-				Columns: []*schema.Column{NotificationsColumns[11], NotificationsColumns[13]},
+				Columns: []*schema.Column{NotificationsColumns[12], NotificationsColumns[14]},
 			},
 		},
 	}

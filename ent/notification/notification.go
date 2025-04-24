@@ -20,6 +20,8 @@ const (
 	FieldUpdateTime = "update_time"
 	// FieldBody holds the string denoting the body field in the database.
 	FieldBody = "body"
+	// FieldTenantID holds the string denoting the tenant_id field in the database.
+	FieldTenantID = "tenant_id"
 	// FieldHeadline holds the string denoting the headline field in the database.
 	FieldHeadline = "headline"
 	// FieldName holds the string denoting the name field in the database.
@@ -54,6 +56,7 @@ var Columns = []string{
 	FieldCreateTime,
 	FieldUpdateTime,
 	FieldBody,
+	FieldTenantID,
 	FieldHeadline,
 	FieldName,
 	FieldFrom,
@@ -161,6 +164,11 @@ func ByUpdateTime(opts ...sql.OrderTermOption) OrderOption {
 // ByBody orders the results by the body field.
 func ByBody(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBody, opts...).ToFunc()
+}
+
+// ByTenantID orders the results by the tenant_id field.
+func ByTenantID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTenantID, opts...).ToFunc()
 }
 
 // ByHeadline orders the results by the headline field.

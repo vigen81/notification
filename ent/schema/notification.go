@@ -38,6 +38,7 @@ type Map map[string]interface{}
 func (Notification) Fields() []ent.Field {
 	return []ent.Field{
 		field.Text("body"),
+		field.Int64("tenant_id"),
 		field.String("headline").Optional(),
 		field.String("name").Optional(),
 		field.String("from").Optional(),

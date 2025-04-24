@@ -26,6 +26,8 @@ type Notification struct {
 	UpdateTime time.Time `json:"update_time,omitempty"`
 	// Body holds the value of the "body" field.
 	Body string `json:"body,omitempty"`
+	// TenantID holds the value of the "tenant_id" field.
+	TenantID int64 `json:"tenant_id,omitempty"`
 	// Headline holds the value of the "headline" field.
 	Headline string `json:"headline,omitempty"`
 	// Name holds the value of the "name" field.
@@ -60,7 +62,7 @@ func (*Notification) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case notification.FieldMeta:
 			values[i] = new([]byte)
-		case notification.FieldID, notification.FieldScheduleTs:
+		case notification.FieldID, notification.FieldTenantID, notification.FieldScheduleTs:
 			values[i] = new(sql.NullInt64)
 		case notification.FieldBody, notification.FieldHeadline, notification.FieldName, notification.FieldFrom, notification.FieldReplyTo, notification.FieldTag, notification.FieldRequestID, notification.FieldType, notification.FieldStatus, notification.FieldErrorMessage:
 			values[i] = new(sql.NullString)
@@ -106,6 +108,12 @@ func (n *Notification) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field body", values[i])
 			} else if value.Valid {
 				n.Body = value.String
+			}
+		case notification.FieldTenantID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
+			} else if value.Valid {
+				n.TenantID = value.Int64
 			}
 		case notification.FieldHeadline:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -227,6 +235,9 @@ func (n *Notification) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("body=")
 	builder.WriteString(n.Body)
+	builder.WriteString(", ")
+	builder.WriteString("tenant_id=")
+	builder.WriteString(fmt.Sprintf("%v", n.TenantID))
 	builder.WriteString(", ")
 	builder.WriteString("headline=")
 	builder.WriteString(n.Headline)

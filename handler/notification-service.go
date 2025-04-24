@@ -102,6 +102,7 @@ func (n notificationServiceHandler) Email(_ context.Context, request *pb.EmailRe
 		SetFrom(request.From).
 		SetReplyTo(request.ReplyTo).
 		SetTag(request.Info.Tag).
+		SetTenantID(request.TenantId).
 		SetAddress(types.Address(request.Address)).
 		SetBody(request.Body).
 		SetHeadline(request.Subject).
@@ -159,6 +160,7 @@ func (n notificationServiceHandler) Sms(_ context.Context, request *pb.SmsReques
 		SetAddress(types.Address(request.PhoneNumber)).
 		SetBody(request.Body).
 		SetTag(request.Info.Tag).
+		SetTenantID(request.TenantId).
 		SetType(notification.TypeSMS).
 		SetStatus(notification.StatusACTIVE).
 		SetMeta(&schema.NotificationMeta{Service: request.Service}).

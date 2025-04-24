@@ -19,7 +19,7 @@ func (s *Sms) Do(notification *ent.Notification) (err error) {
 	}
 	meta := notification.Meta
 
-	_, err = twilio_client.Sms(addr, notification.Body, meta.Service)
+	_, err = twilio_client.Sms(notification.TenantID, addr, notification.Body, meta.Service)
 
 	if nil != err {
 		return err

@@ -56,6 +56,12 @@ func (nc *NotificationCreate) SetBody(s string) *NotificationCreate {
 	return nc
 }
 
+// SetTenantID sets the "tenant_id" field.
+func (nc *NotificationCreate) SetTenantID(i int64) *NotificationCreate {
+	nc.mutation.SetTenantID(i)
+	return nc
+}
+
 // SetHeadline sets the "headline" field.
 func (nc *NotificationCreate) SetHeadline(s string) *NotificationCreate {
 	nc.mutation.SetHeadline(s)
@@ -252,6 +258,9 @@ func (nc *NotificationCreate) check() error {
 	if _, ok := nc.mutation.Body(); !ok {
 		return &ValidationError{Name: "body", err: errors.New(`ent: missing required field "Notification.body"`)}
 	}
+	if _, ok := nc.mutation.TenantID(); !ok {
+		return &ValidationError{Name: "tenant_id", err: errors.New(`ent: missing required field "Notification.tenant_id"`)}
+	}
 	if _, ok := nc.mutation.Address(); !ok {
 		return &ValidationError{Name: "address", err: errors.New(`ent: missing required field "Notification.address"`)}
 	}
@@ -311,6 +320,10 @@ func (nc *NotificationCreate) createSpec() (*Notification, *sqlgraph.CreateSpec)
 	if value, ok := nc.mutation.Body(); ok {
 		_spec.SetField(notification.FieldBody, field.TypeString, value)
 		_node.Body = value
+	}
+	if value, ok := nc.mutation.TenantID(); ok {
+		_spec.SetField(notification.FieldTenantID, field.TypeInt64, value)
+		_node.TenantID = value
 	}
 	if value, ok := nc.mutation.Headline(); ok {
 		_spec.SetField(notification.FieldHeadline, field.TypeString, value)

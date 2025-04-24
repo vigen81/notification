@@ -8,7 +8,6 @@ import (
 	"gitlab.com/healthcare-integration/golang/notification-service/ent/migrate"
 	"go-micro.dev/v4/config/reader"
 	"go-micro.dev/v4/logger"
-	"os"
 	// "gitlab.com/healthcare-integration/golang/storage-service/core"
 )
 
@@ -20,43 +19,6 @@ type database struct {
 	Database string `json:"database"`
 }
 
-//	func Connect() {
-//		var err error
-//		conf := core.Config.database
-//		dsn := fmt.Sprintf(
-//			"%s:%s@tcp(%s:3306)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-//			conf.Username,
-//			conf.Password,
-//			conf.Host,
-//			conf.DbName,
-//		)
-//		dsn = fmt.Sprintf("root:Ap123456!!@tcp(localhost:33063)/hcare?charset=utf8mb4&parseTime=True&loc=Local")
-//
-//		fmt.Println(dsn)
-//		db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
-//
-//		if nil != err {
-//			panic(err)
-//		}
-//	}
-//
-//	func DB() *gorm.DB {
-//		return db.Debug()
-//	}
-//
-//	func Migrate() {
-//		err := DB().AutoMigrate(
-//			&model.Patient{},
-//			&model.Session{},
-//			&model.VerificationCode{},
-//			&model.Notification{},
-//			&model.DepartmentID{},
-//			&model.Provider{},
-//		)
-//		if nil != err {
-//			panic(err)
-//		}
-//	}
 var db *ent.Client
 
 func Client() *ent.Client {
@@ -91,12 +53,6 @@ func Tx(handler func(tx *ent.Tx) error) error {
 
 func Connect() (err error) {
 
-	if err != nil {
-		return err
-	}
-	if os.Getenv("DEV") == "true" {
-		params.Port = 33169
-	}
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		params.User,
