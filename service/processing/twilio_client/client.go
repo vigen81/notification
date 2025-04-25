@@ -46,17 +46,17 @@ func GetTenantBySid(sid string) (int64, error) {
 	return 0, errors.New("config not found")
 }
 
-func Sms(tenantId int64, to, payload, service string) (data string, err error) {
-
-	body := &openapi.CreateMessageParams{}
-	body.SetTo(to)
-	body.SetMessagingServiceSid(service)
-	body.SetBody(payload)
+func Sms(tenantId int64, to, payload string) (data string, err error) {
 
 	params, ok := Configs[tenantId]
 	if !ok {
 		return "", errors.New("no config found")
 	}
+	body := &openapi.CreateMessageParams{}
+	body.SetTo(to)
+	body.SetMessagingServiceSid(params.Sid)
+	body.SetBody(payload)
+
 	client := twilio.NewRestClientWithParams(twilio.ClientParams{
 		Username: params.AccountSid,
 		Password: params.AuthToken,

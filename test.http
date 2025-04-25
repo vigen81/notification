@@ -1,4 +1,4 @@
-POST http://localhost:8080/incoming-message
+POST https://callback-tw.healthcoding.io/incoming-message
 Content-Type: application/json
 
 {
