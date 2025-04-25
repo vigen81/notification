@@ -60,7 +60,7 @@ func bind(route *echo.Echo) *echo.Echo {
 		if err := c.Bind(&msg); err != nil {
 			return err
 		}
-		if msg.Status == "stop" {
+		if msg.Status == "stop" || msg.Status == "start" {
 			sid := msg.Sid
 			id, err := twilio_client.GetTenantBySid(sid)
 			if err != nil {
