@@ -1,7 +1,10 @@
 package main
 
 import (
+	"gitlab.com/healthcare-integration/golang/notification-service/service/broker"
+	"gitlab.com/healthcare-integration/golang/notification-service/web/routes"
 	"go-micro.dev/v4"
+	"go-micro.dev/v4/server"
 	"os"
 	"time"
 	_ "time/tzdata"
@@ -10,6 +13,7 @@ import (
 	"go-micro.dev/v4/config/reader"
 	"go-micro.dev/v4/logger"
 
+	httpServer "github.com/go-micro/plugins/v4/server/http"
 	"gitlab.com/healthcare-integration/golang/notification-service/handler"
 	pb "gitlab.com/healthcare-integration/golang/notification-service/pb/notification"
 	"gitlab.com/healthcare-integration/golang/notification-service/service/crypt"
@@ -24,8 +28,9 @@ import (
 )
 
 var (
-	serviceName = "core.codify.notification.service"
-	version     = "latest"
+	serviceName     = "core.codify.notification.service"
+	version         = "latest"
+	httpServiceName = "core.codify.notification.http.service"
 )
 
 func main() {
@@ -49,6 +54,16 @@ func main() {
 	if os.Getenv("DEV") == "true" {
 		port = ":50058"
 	}
+
+	webServer := httpServer.NewServer(
+		server.Address(":8080"),
+		server.Name(httpServiceName),
+		server.Version(version),
+		server.RegisterInterval(time.Second*30),
+		server.RegisterTTL(time.Second*15),
+		server.Registry(bootstrap.Registry()),
+	)
+
 	service := micro.NewService(
 		micro.Server(gs.NewServer()),
 		micro.Address(port),
@@ -60,11 +75,34 @@ func main() {
 		micro.BeforeStart(func() error {
 			return configure()
 		}),
-		micro.AfterStart(func() error {
-			return task.Background()
-		}),
 		micro.WrapHandler(bootstrap.TcpWrapper),
+		micro.AfterStart(func() error {
+			err = task.Background()
+
+			if err != nil {
+				return err
+			}
+			err = webServer.Start()
+			//
+			if nil != err {
+				return err
+			}
+			//return nil
+			//err := webServer.Start()
+			//if nil != err {
+			//	return err
+			//}
+			return nil
+		}),
 	)
+
+	//service.Init()
+
+	hd := webServer.NewHandler(routes.Server())
+
+	if err := webServer.Handle(hd); err != nil {
+		logger.Fatal(err)
+	}
 
 	// Register handler
 	err = pb.RegisterNotificationServiceHandler(service.Server(), new(handler.NotificationService))
@@ -85,7 +123,7 @@ func configure() (err error) {
 		"database": db.Configure,
 		"twilio":   twilio_client.Configure,
 		"crypt":    crypt.Configure,
-		//"fcm":      fcm.Configure,
+		"rabbitmq": broker.Configure,
 		"sendgrid": email.Configure,
 	}
 

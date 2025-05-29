@@ -14,12 +14,8 @@ func NewSms() *Sms {
 
 func (s *Sms) Do(notification *ent.Notification) (err error) {
 	addr := notification.Address.String()
-	if nil != err {
-		return err
-	}
-	meta := notification.Meta
 
-	_, err = twilio_client.Sms(addr, notification.Body, meta.Service)
+	_, err = twilio_client.Sms(notification.TenantID, addr, notification.Body)
 
 	if nil != err {
 		return err

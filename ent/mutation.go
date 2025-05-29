@@ -38,6 +38,8 @@ type NotificationMutation struct {
 	create_time    *time.Time
 	update_time    *time.Time
 	body           *string
+	tenant_id      *int64
+	addtenant_id   *int64
 	headline       *string
 	name           *string
 	from           *string
@@ -261,6 +263,62 @@ func (m *NotificationMutation) OldBody(ctx context.Context) (v string, err error
 // ResetBody resets all changes to the "body" field.
 func (m *NotificationMutation) ResetBody() {
 	m.body = nil
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *NotificationMutation) SetTenantID(i int64) {
+	m.tenant_id = &i
+	m.addtenant_id = nil
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *NotificationMutation) TenantID() (r int64, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the Notification entity.
+// If the Notification object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationMutation) OldTenantID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// AddTenantID adds i to the "tenant_id" field.
+func (m *NotificationMutation) AddTenantID(i int64) {
+	if m.addtenant_id != nil {
+		*m.addtenant_id += i
+	} else {
+		m.addtenant_id = &i
+	}
+}
+
+// AddedTenantID returns the value that was added to the "tenant_id" field in this mutation.
+func (m *NotificationMutation) AddedTenantID() (r int64, exists bool) {
+	v := m.addtenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *NotificationMutation) ResetTenantID() {
+	m.tenant_id = nil
+	m.addtenant_id = nil
 }
 
 // SetHeadline sets the "headline" field.
@@ -854,7 +912,7 @@ func (m *NotificationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NotificationMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 16)
 	if m.create_time != nil {
 		fields = append(fields, notification.FieldCreateTime)
 	}
@@ -863,6 +921,9 @@ func (m *NotificationMutation) Fields() []string {
 	}
 	if m.body != nil {
 		fields = append(fields, notification.FieldBody)
+	}
+	if m.tenant_id != nil {
+		fields = append(fields, notification.FieldTenantID)
 	}
 	if m.headline != nil {
 		fields = append(fields, notification.FieldHeadline)
@@ -914,6 +975,8 @@ func (m *NotificationMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdateTime()
 	case notification.FieldBody:
 		return m.Body()
+	case notification.FieldTenantID:
+		return m.TenantID()
 	case notification.FieldHeadline:
 		return m.Headline()
 	case notification.FieldName:
@@ -953,6 +1016,8 @@ func (m *NotificationMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldUpdateTime(ctx)
 	case notification.FieldBody:
 		return m.OldBody(ctx)
+	case notification.FieldTenantID:
+		return m.OldTenantID(ctx)
 	case notification.FieldHeadline:
 		return m.OldHeadline(ctx)
 	case notification.FieldName:
@@ -1006,6 +1071,13 @@ func (m *NotificationMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetBody(v)
+		return nil
+	case notification.FieldTenantID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
 		return nil
 	case notification.FieldHeadline:
 		v, ok := value.(string)
@@ -1099,6 +1171,9 @@ func (m *NotificationMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *NotificationMutation) AddedFields() []string {
 	var fields []string
+	if m.addtenant_id != nil {
+		fields = append(fields, notification.FieldTenantID)
+	}
 	if m.addschedule_ts != nil {
 		fields = append(fields, notification.FieldScheduleTs)
 	}
@@ -1110,6 +1185,8 @@ func (m *NotificationMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *NotificationMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case notification.FieldTenantID:
+		return m.AddedTenantID()
 	case notification.FieldScheduleTs:
 		return m.AddedScheduleTs()
 	}
@@ -1121,6 +1198,13 @@ func (m *NotificationMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *NotificationMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case notification.FieldTenantID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTenantID(v)
+		return nil
 	case notification.FieldScheduleTs:
 		v, ok := value.(int64)
 		if !ok {
@@ -1214,6 +1298,9 @@ func (m *NotificationMutation) ResetField(name string) error {
 		return nil
 	case notification.FieldBody:
 		m.ResetBody()
+		return nil
+	case notification.FieldTenantID:
+		m.ResetTenantID()
 		return nil
 	case notification.FieldHeadline:
 		m.ResetHeadline()

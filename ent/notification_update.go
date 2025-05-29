@@ -50,6 +50,27 @@ func (nu *NotificationUpdate) SetNillableBody(s *string) *NotificationUpdate {
 	return nu
 }
 
+// SetTenantID sets the "tenant_id" field.
+func (nu *NotificationUpdate) SetTenantID(i int64) *NotificationUpdate {
+	nu.mutation.ResetTenantID()
+	nu.mutation.SetTenantID(i)
+	return nu
+}
+
+// SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
+func (nu *NotificationUpdate) SetNillableTenantID(i *int64) *NotificationUpdate {
+	if i != nil {
+		nu.SetTenantID(*i)
+	}
+	return nu
+}
+
+// AddTenantID adds i to the "tenant_id" field.
+func (nu *NotificationUpdate) AddTenantID(i int64) *NotificationUpdate {
+	nu.mutation.AddTenantID(i)
+	return nu
+}
+
 // SetHeadline sets the "headline" field.
 func (nu *NotificationUpdate) SetHeadline(s string) *NotificationUpdate {
 	nu.mutation.SetHeadline(s)
@@ -339,6 +360,12 @@ func (nu *NotificationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := nu.mutation.Body(); ok {
 		_spec.SetField(notification.FieldBody, field.TypeString, value)
 	}
+	if value, ok := nu.mutation.TenantID(); ok {
+		_spec.SetField(notification.FieldTenantID, field.TypeInt64, value)
+	}
+	if value, ok := nu.mutation.AddedTenantID(); ok {
+		_spec.AddField(notification.FieldTenantID, field.TypeInt64, value)
+	}
 	if value, ok := nu.mutation.Headline(); ok {
 		_spec.SetField(notification.FieldHeadline, field.TypeString, value)
 	}
@@ -439,6 +466,27 @@ func (nuo *NotificationUpdateOne) SetNillableBody(s *string) *NotificationUpdate
 	if s != nil {
 		nuo.SetBody(*s)
 	}
+	return nuo
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (nuo *NotificationUpdateOne) SetTenantID(i int64) *NotificationUpdateOne {
+	nuo.mutation.ResetTenantID()
+	nuo.mutation.SetTenantID(i)
+	return nuo
+}
+
+// SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
+func (nuo *NotificationUpdateOne) SetNillableTenantID(i *int64) *NotificationUpdateOne {
+	if i != nil {
+		nuo.SetTenantID(*i)
+	}
+	return nuo
+}
+
+// AddTenantID adds i to the "tenant_id" field.
+func (nuo *NotificationUpdateOne) AddTenantID(i int64) *NotificationUpdateOne {
+	nuo.mutation.AddTenantID(i)
 	return nuo
 }
 
@@ -760,6 +808,12 @@ func (nuo *NotificationUpdateOne) sqlSave(ctx context.Context) (_node *Notificat
 	}
 	if value, ok := nuo.mutation.Body(); ok {
 		_spec.SetField(notification.FieldBody, field.TypeString, value)
+	}
+	if value, ok := nuo.mutation.TenantID(); ok {
+		_spec.SetField(notification.FieldTenantID, field.TypeInt64, value)
+	}
+	if value, ok := nuo.mutation.AddedTenantID(); ok {
+		_spec.AddField(notification.FieldTenantID, field.TypeInt64, value)
 	}
 	if value, ok := nuo.mutation.Headline(); ok {
 		_spec.SetField(notification.FieldHeadline, field.TypeString, value)

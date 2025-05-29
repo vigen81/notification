@@ -70,6 +70,11 @@ func Body(v string) predicate.Notification {
 	return predicate.Notification(sql.FieldEQ(FieldBody, v))
 }
 
+// TenantID applies equality check predicate on the "tenant_id" field. It's identical to TenantIDEQ.
+func TenantID(v int64) predicate.Notification {
+	return predicate.Notification(sql.FieldEQ(FieldTenantID, v))
+}
+
 // Headline applies equality check predicate on the "headline" field. It's identical to HeadlineEQ.
 func Headline(v string) predicate.Notification {
 	return predicate.Notification(sql.FieldEQ(FieldHeadline, v))
@@ -258,6 +263,46 @@ func BodyEqualFold(v string) predicate.Notification {
 // BodyContainsFold applies the ContainsFold predicate on the "body" field.
 func BodyContainsFold(v string) predicate.Notification {
 	return predicate.Notification(sql.FieldContainsFold(FieldBody, v))
+}
+
+// TenantIDEQ applies the EQ predicate on the "tenant_id" field.
+func TenantIDEQ(v int64) predicate.Notification {
+	return predicate.Notification(sql.FieldEQ(FieldTenantID, v))
+}
+
+// TenantIDNEQ applies the NEQ predicate on the "tenant_id" field.
+func TenantIDNEQ(v int64) predicate.Notification {
+	return predicate.Notification(sql.FieldNEQ(FieldTenantID, v))
+}
+
+// TenantIDIn applies the In predicate on the "tenant_id" field.
+func TenantIDIn(vs ...int64) predicate.Notification {
+	return predicate.Notification(sql.FieldIn(FieldTenantID, vs...))
+}
+
+// TenantIDNotIn applies the NotIn predicate on the "tenant_id" field.
+func TenantIDNotIn(vs ...int64) predicate.Notification {
+	return predicate.Notification(sql.FieldNotIn(FieldTenantID, vs...))
+}
+
+// TenantIDGT applies the GT predicate on the "tenant_id" field.
+func TenantIDGT(v int64) predicate.Notification {
+	return predicate.Notification(sql.FieldGT(FieldTenantID, v))
+}
+
+// TenantIDGTE applies the GTE predicate on the "tenant_id" field.
+func TenantIDGTE(v int64) predicate.Notification {
+	return predicate.Notification(sql.FieldGTE(FieldTenantID, v))
+}
+
+// TenantIDLT applies the LT predicate on the "tenant_id" field.
+func TenantIDLT(v int64) predicate.Notification {
+	return predicate.Notification(sql.FieldLT(FieldTenantID, v))
+}
+
+// TenantIDLTE applies the LTE predicate on the "tenant_id" field.
+func TenantIDLTE(v int64) predicate.Notification {
+	return predicate.Notification(sql.FieldLTE(FieldTenantID, v))
 }
 
 // HeadlineEQ applies the EQ predicate on the "headline" field.
