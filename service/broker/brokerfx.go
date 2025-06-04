@@ -7,7 +7,6 @@ import (
 
 var Module = fx.Module("broker", fx.Provide(
 	NewBroker[dto.ActionDto],
-	NewBroker[dto.RoundCompletedDto],
 	NewPublisherService,
 	NewSubscriberService,
 ))
