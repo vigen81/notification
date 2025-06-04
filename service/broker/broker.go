@@ -1,93 +1,42 @@
 package broker
 
 import (
-	"fmt"
+	"context"
+	"encoding/json"
+
 	"github.com/ThreeDotsLabs/watermill"
-	"github.com/ThreeDotsLabs/watermill-amqp/v2/pkg/amqp"
-	"go-micro.dev/v4/config/reader"
-	"sync"
+	"github.com/ThreeDotsLabs/watermill/message"
+	"github.comsmarbet/internal/topic"
 )
 
-type config struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Host     string `json:"host"`
-	Port     int    `json:"port"`
+type Item interface {
+}
+type Broker[T Item] struct {
+	publisher  PublisherService
+	subscriber SubscriberService
 }
 
-var params config
-
-func Configure(r reader.Value) error {
-	err := r.Scan(&params)
-	if nil != err {
-		return err
-	}
-	return connect()
-
-}
-
-type Publishers struct {
-	sync.Mutex
-	publishers map[string]*amqp.Publisher
-}
-
-var publishers Publishers
-var subscriber *amqp.Subscriber
-var amqpConfig amqp.Config
-
-func init() {
-	publishers = Publishers{
-		publishers: make(map[string]*amqp.Publisher),
+func NewBroker[T Item](publisher PublisherService, subscriber SubscriberService, cnf *Config) *Broker[T] {
+	return &Broker[T]{
+		publisher:  publisher,
+		subscriber: subscriber,
 	}
 }
 
-type ConfigOption func(publisher *amqp.Config)
+func (b *Broker[T]) Publish(topic topic.Topic, data ...T) error {
+	var messages []*message.Message
+	for _, item := range data {
+		msg, err := json.Marshal(item)
+		if err != nil {
+			return err
+		}
+		messages = append(messages, message.NewMessage(watermill.NewUUID(), msg))
 
-func WithType(t string) ConfigOption {
-	return func(conf *amqp.Config) {
-		conf.Exchange.Type = t
 	}
+
+	return b.publisher.Publish(string(topic), messages...)
 }
 
-var Direct = WithType("direct")
-var Fanout = WithType("fanout")
-
-func Publisher(topic string, exchange string, opts ...ConfigOption) (*amqp.Publisher, error) {
-	publishers.Lock()
-	defer publishers.Unlock()
-
-	if publisher, ok := publishers.publishers[topic]; ok {
-		return publisher, nil
-	}
-	amqpConfig.Exchange.GenerateName = func(topic string) string {
-		return exchange
-	}
-	//amqpConfig.Publish.GenerateRoutingKey = func(topic string) string {
-	//	return fmt.Sprintf("%s_rk", topic)
-	//}
-	for _, opt := range opts {
-		opt(&amqpConfig)
-	}
-	publisher, err := amqp.NewPublisher(amqpConfig, watermill.NewStdLogger(true, true))
-
-	if err != nil {
-		return nil, err
-	}
-
-	publishers.publishers[topic] = publisher
-	return publisher, nil
-}
-
-func connect() error {
-	amqpURI := fmt.Sprintf("amqp://%s:%s@%s:%d/", params.Username, params.Password, params.Host, params.Port)
-	amqpConfig = amqp.NewDurablePubSubConfig(amqpURI, func(topic string) string {
-		return topic
-	})
-
-	//amqpConfig.Exchange.GenerateName = func(topic string) string {
-	//	return "storage-changes_x"
-	//}
-
-	return amqpConfig.ValidateSubscriberWithConnection()
-
+func (b *Broker[T]) Subscribe(topic topic.Topic) (<-chan *message.Message, error) {
+	return b.subscriber.Subscribe(context.Background(), string(topic))
 }
