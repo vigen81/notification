@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"gitlab.com/healthcare-integration/golang/notification-service/ent/notification"
-	"gitlab.com/healthcare-integration/golang/notification-service/ent/schema"
-	pb "gitlab.com/healthcare-integration/golang/notification-service/pb/notification"
-	"gitlab.com/healthcare-integration/golang/notification-service/service/db"
-	"gitlab.com/healthcare-integration/golang/notification-service/service/processing"
-	"gitlab.com/healthcare-integration/golang/notification-service/types"
+	"gitlab.smartbet.am/golang/notification/ent/notification"
+	"gitlab.smartbet.am/golang/notification/ent/schema"
+	pb "gitlab.smartbet.am/golang/notification/pb/notification"
+	"gitlab.smartbet.am/golang/notification/service/db"
+	"gitlab.smartbet.am/golang/notification/service/processing"
+	"gitlab.smartbet.am/golang/notification/types"
 )
 
 type NotificationService struct{}

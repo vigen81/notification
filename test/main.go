@@ -4,7 +4,7 @@ package main
 //	`gitlab.com/healthcare-integration/stream`
 //	`go-micro.dev/v4/logger`
 //
-//	pb `gitlab.com/healthcare-integration/golang/notification-service/pb/notification`
+//	pb `gitlab.smartbet.am/golang/notification/pb/notification`
 //)
 //
 //func main() {

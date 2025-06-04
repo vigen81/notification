@@ -12,7 +12,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"gitlab.com/healthcare-integration/golang/notification-service/ent/notification"
+	"gitlab.smartbet.am/golang/notification/ent/notification"
 )
 
 // ent aliases to avoid import conflicts in user's code.

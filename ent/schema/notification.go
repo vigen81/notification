@@ -9,7 +9,7 @@ import (
 	"entgo.io/ent/schema/index"
 	"entgo.io/ent/schema/mixin"
 
-	"gitlab.com/healthcare-integration/golang/notification-service/types"
+	"gitlab.smartbet.am/golang/notification/types"
 )
 
 // Notification holds the schema definition for the Notification entity.

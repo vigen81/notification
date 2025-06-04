@@ -10,7 +10,7 @@ import (
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"go-micro.dev/v4/config/reader"
 
-	"gitlab.com/healthcare-integration/golang/notification-service/ent"
+	"gitlab.smartbet.am/golang/notification/ent"
 )
 
 var config configuration

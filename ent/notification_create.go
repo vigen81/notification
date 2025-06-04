@@ -10,9 +10,9 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"gitlab.com/healthcare-integration/golang/notification-service/ent/notification"
-	"gitlab.com/healthcare-integration/golang/notification-service/ent/schema"
-	"gitlab.com/healthcare-integration/golang/notification-service/types"
+	"gitlab.smartbet.am/golang/notification/ent/notification"
+	"gitlab.smartbet.am/golang/notification/ent/schema"
+	"gitlab.smartbet.am/golang/notification/types"
 )
 
 // NotificationCreate is the builder for creating a Notification entity.

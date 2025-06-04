@@ -11,10 +11,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"gitlab.com/healthcare-integration/golang/notification-service/ent/notification"
-	"gitlab.com/healthcare-integration/golang/notification-service/ent/predicate"
-	"gitlab.com/healthcare-integration/golang/notification-service/ent/schema"
-	"gitlab.com/healthcare-integration/golang/notification-service/types"
+	"gitlab.smartbet.am/golang/notification/ent/notification"
+	"gitlab.smartbet.am/golang/notification/ent/predicate"
+	"gitlab.smartbet.am/golang/notification/ent/schema"
+	"gitlab.smartbet.am/golang/notification/types"
 )
 
 // NotificationUpdate is the builder for updating Notification entities.

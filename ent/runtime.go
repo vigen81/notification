@@ -5,8 +5,8 @@ package ent
 import (
 	"time"
 
-	"gitlab.com/healthcare-integration/golang/notification-service/ent/notification"
-	"gitlab.com/healthcare-integration/golang/notification-service/ent/schema"
+	"gitlab.smartbet.am/golang/notification/ent/notification"
+	"gitlab.smartbet.am/golang/notification/ent/schema"
 )
 
 // The init function reads all schema descriptors with runtime code

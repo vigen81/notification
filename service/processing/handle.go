@@ -1,14 +1,14 @@
 package processing
 
 import (
-	`context`
-	`errors`
-	
-	`go-micro.dev/v4/logger`
-	
-	`gitlab.com/healthcare-integration/golang/notification-service/ent`
-	`gitlab.com/healthcare-integration/golang/notification-service/ent/notification`
-	`gitlab.com/healthcare-integration/golang/notification-service/service/processing/email`
+	"context"
+	"errors"
+
+	"go-micro.dev/v4/logger"
+
+	"gitlab.smartbet.am/golang/notification/ent"
+	"gitlab.smartbet.am/golang/notification/ent/notification"
+	"gitlab.smartbet.am/golang/notification/service/processing/email"
 )
 
 type IHandle interface {
@@ -32,7 +32,7 @@ func (h *handler) Handle(item *ent.Notification) error {
 	if nil != err {
 		return err
 	}
-	
+
 	err = item.Update().SetStatus(notification.StatusACTIVE).Exec(context.Background())
 	if nil != err {
 		return err
@@ -44,15 +44,15 @@ func (h *handler) Handle(item *ent.Notification) error {
 		status = notification.StatusFAILED
 		e := processError.Error()
 		errorMessage = &e
-		
+
 	}
 	_, err = item.Update().SetStatus(status).SetNillableErrorMessage(errorMessage).Save(context.Background())
-	
+
 	if nil != err {
 		logger.Errorf("can't update notification status: %s", err.Error())
 	}
 	return processError
-	
+
 }
 
 var Processors *handler

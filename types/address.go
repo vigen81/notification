@@ -2,7 +2,7 @@ package types
 
 import (
 	"database/sql/driver"
-	"gitlab.com/healthcare-integration/golang/notification-service/service/crypt"
+	"gitlab.smartbet.am/golang/notification/service/crypt"
 )
 
 type Address string

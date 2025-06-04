@@ -1,4 +1,4 @@
-module gitlab.com/healthcare-integration/golang/notification-service
+module gitlab.smartbet.am/golang/notification
 
 go 1.21
 

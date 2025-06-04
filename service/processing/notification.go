@@ -1,8 +1,8 @@
 package processing
 
 import (
-	`gitlab.com/healthcare-integration/golang/notification-service/ent`
-	`gitlab.com/healthcare-integration/golang/notification-service/service/processing/fcm`
+	"gitlab.smartbet.am/golang/notification/ent"
+	"gitlab.smartbet.am/golang/notification/service/processing/fcm"
 )
 
 type Notification struct {
@@ -14,7 +14,7 @@ func NewNotification() *Notification {
 
 func (s *Notification) Do(notification *ent.Notification) error {
 	addr := notification.Address
-	
+
 	err := fcm.Send(fcm.Message{
 		Address: addr.String(),
 		Title:   notification.Headline,

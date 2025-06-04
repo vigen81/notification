@@ -5,12 +5,12 @@ package enttest
 import (
 	"context"
 
-	"gitlab.com/healthcare-integration/golang/notification-service/ent"
+	"gitlab.smartbet.am/golang/notification/ent"
 	// required by schema hooks.
-	_ "gitlab.com/healthcare-integration/golang/notification-service/ent/runtime"
+	_ "gitlab.smartbet.am/golang/notification/ent/runtime"
 
 	"entgo.io/ent/dialect/sql/schema"
-	"gitlab.com/healthcare-integration/golang/notification-service/ent/migrate"
+	"gitlab.smartbet.am/golang/notification/ent/migrate"
 )
 
 type (

@@ -15,14 +15,14 @@ Already a pro? Just edit this README.md and make it your own. Want to make it ea
 
 ```
 cd existing_repo
-git remote add origin https://gitlab.com/healthcare-integration/golang/notification-service.git
+git remote add origin https://gitlab.smartbet.am/golang/notification.git
 git branch -M master
 git push -uf origin master
 ```
 
 ## Integrate with your tools
 
-- [ ] [Set up project integrations](https://gitlab.com/healthcare-integration/golang/notification-service/-/settings/integrations)
+- [ ] [Set up project integrations](https://gitlab.smartbet.am/golang/notification/-/settings/integrations)
 
 ## Collaborate with your team
 

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"gitlab.com/healthcare-integration/golang/notification-service/ent/predicate"
-	"gitlab.com/healthcare-integration/golang/notification-service/types"
+	"gitlab.smartbet.am/golang/notification/ent/predicate"
+	"gitlab.smartbet.am/golang/notification/types"
 )
 
 // ID filters vertices based on their ID field.

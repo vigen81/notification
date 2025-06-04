@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"gitlab.com/healthcare-integration/golang/notification-service/ent"
+	"gitlab.smartbet.am/golang/notification/ent"
 )
 
 // The NotificationFunc type is an adapter to allow the use of ordinary

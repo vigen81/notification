@@ -5,8 +5,8 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"gitlab.com/healthcare-integration/golang/notification-service/service/broker"
-	"gitlab.com/healthcare-integration/golang/notification-service/service/processing/twilio_client"
+	"gitlab.smartbet.am/golang/notification/service/broker"
+	"gitlab.smartbet.am/golang/notification/service/processing/twilio_client"
 	"go-micro.dev/v4/logger"
 	"net/http"
 

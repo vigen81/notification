@@ -1,8 +1,8 @@
 package processing
 
 import (
-	"gitlab.com/healthcare-integration/golang/notification-service/ent"
-	"gitlab.com/healthcare-integration/golang/notification-service/service/processing/twilio_client"
+	"gitlab.smartbet.am/golang/notification/ent"
+	"gitlab.smartbet.am/golang/notification/service/processing/twilio_client"
 )
 
 type Sms struct {

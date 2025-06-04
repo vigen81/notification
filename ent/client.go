@@ -9,12 +9,12 @@ import (
 	"log"
 	"reflect"
 
-	"gitlab.com/healthcare-integration/golang/notification-service/ent/migrate"
+	"gitlab.smartbet.am/golang/notification/ent/migrate"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
-	"gitlab.com/healthcare-integration/golang/notification-service/ent/notification"
+	"gitlab.smartbet.am/golang/notification/ent/notification"
 )
 
 // Client is the client that holds all ent builders.

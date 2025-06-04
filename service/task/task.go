@@ -1,15 +1,15 @@
 package task
 
 import (
-	`context`
-	`github.com/gammazero/workerpool`
-	`github.com/jasonlvhit/gocron`
-	`gitlab.com/healthcare-integration/golang/notification-service/ent/notification`
-	`gitlab.com/healthcare-integration/golang/notification-service/service/db`
-	`gitlab.com/healthcare-integration/golang/notification-service/service/processing`
-	`go-micro.dev/v4/errors`
-	`go-micro.dev/v4/logger`
-	`time`
+	"context"
+	"github.com/gammazero/workerpool"
+	"github.com/jasonlvhit/gocron"
+	"gitlab.smartbet.am/golang/notification/ent/notification"
+	"gitlab.smartbet.am/golang/notification/service/db"
+	"gitlab.smartbet.am/golang/notification/service/processing"
+	"go-micro.dev/v4/errors"
+	"go-micro.dev/v4/logger"
+	"time"
 )
 
 var wp = workerpool.New(16)
@@ -23,7 +23,7 @@ func NotificationTask() {
 			notification.ScheduleTsLTE(time.Now().Unix()),
 			notification.ScheduleTsNotNil(),
 		).All(context.Background())
-	
+
 	if nil != err {
 		logger.Error(err.Error())
 	}
@@ -43,7 +43,7 @@ func Background() error {
 		return errors.New("cannot run task %s", err.Error(), -1)
 	}
 	gocron.Start()
-	
+
 	return err
-	
+
 }

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"gitlab.com/healthcare-integration/golang/notification-service/service/broker"
-	"gitlab.com/healthcare-integration/golang/notification-service/web/routes"
+	"gitlab.smartbet.am/golang/notification/service/broker"
+	"gitlab.smartbet.am/golang/notification/web/routes"
 	"go-micro.dev/v4"
 	"go-micro.dev/v4/server"
 	"os"
@@ -14,13 +14,13 @@ import (
 	"go-micro.dev/v4/logger"
 
 	httpServer "github.com/go-micro/plugins/v4/server/http"
-	"gitlab.com/healthcare-integration/golang/notification-service/handler"
-	pb "gitlab.com/healthcare-integration/golang/notification-service/pb/notification"
-	"gitlab.com/healthcare-integration/golang/notification-service/service/crypt"
-	"gitlab.com/healthcare-integration/golang/notification-service/service/db"
-	"gitlab.com/healthcare-integration/golang/notification-service/service/processing/email"
-	"gitlab.com/healthcare-integration/golang/notification-service/service/processing/twilio_client"
-	"gitlab.com/healthcare-integration/golang/notification-service/service/task"
+	"gitlab.smartbet.am/golang/notification/handler"
+	pb "gitlab.smartbet.am/golang/notification/pb/notification"
+	"gitlab.smartbet.am/golang/notification/service/crypt"
+	"gitlab.smartbet.am/golang/notification/service/db"
+	"gitlab.smartbet.am/golang/notification/service/processing/email"
+	"gitlab.smartbet.am/golang/notification/service/processing/twilio_client"
+	"gitlab.smartbet.am/golang/notification/service/task"
 
 	"go-micro.dev/v4/config"
 
