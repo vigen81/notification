@@ -6,7 +6,6 @@ import (
 
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/smarbet/internal/topic"
 )
 
 type Item interface {

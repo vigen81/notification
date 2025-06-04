@@ -1,12 +1,14 @@
 package broker
 
 import (
-	"github.comsmarbet/internal/dto"
 	"go.uber.org/fx"
 )
 
+type TType struct {
+}
+
 var Module = fx.Module("broker", fx.Provide(
-	NewBroker[dto.ActionDto],
+	NewBroker[TType],
 	NewPublisherService,
 	NewSubscriberService,
 ))
