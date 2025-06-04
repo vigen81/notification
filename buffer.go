@@ -3,6 +3,8 @@ package buffer
 import (
 	"encoding/json"
 	"fmt"
+	"gitlab.smartbet.am/golang/notification/service/broker"
+	"gitlab.smartbet.am/golang/notification/topic"
 	"time"
 )
 
