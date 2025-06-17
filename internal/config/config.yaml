@@ -1,0 +1,49 @@
+server:
+  port: ":8080"
+  read_timeout: 15s
+  write_timeout: 15s
+  idle_timeout: 120s
+
+database:
+  host: localhost
+  port: "3306"
+  user: notification_user
+  password: notification_pass
+  database: notification_db
+  max_open_conns: 25
+  max_idle_conns: 25
+  conn_max_lifetime: 300
+
+kafka:
+  brokers:
+    - localhost:9092
+  consumer_group: notification-engine
+  topics:
+    notifications: notifications
+    events: notification-events
+    dead_letter: notifications-dlq
+
+providers:
+  sendgrid:
+    sandbox_mode: false
+  twilio:
+    edge_location: sydney
+  fcm:
+    validate_only: false
+
+localization:
+  default_locale: en
+  supported_locales:
+    - en
+    - es
+    - fr
+    - de
+    - ru
+    - hy
+  translations_path: ./translations
+
+batch_defaults:
+  max_batch_size: 100
+  flush_interval: 10s
+  max_retries: 3
+  retry_backoff: 5s
