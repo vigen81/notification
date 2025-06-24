@@ -2,60 +2,62 @@ package server
 
 import (
 	"context"
-	"fmt"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/logger"
+	fiberlogger "github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
+	"github.com/gofiber/swagger"
+	"github.com/sirupsen/logrus"
 	"gitlab.smartbet.am/golang/notification/internal/config"
 	"gitlab.smartbet.am/golang/notification/internal/handlers"
 	"gitlab.smartbet.am/golang/notification/internal/middleware"
-	"go.uber.org/zap"
 )
 
 type FiberServer struct {
-	app             *fiber.App
-	config          *config.Config
-	notifHandler    *handlers.NotificationHandler
-	configHandler   *handlers.ConfigHandler
-	templateHandler *handlers.TemplateHandler
-	logger          *zap.Logger
+	app           *fiber.App
+	config        *config.Config
+	notifHandler  *handlers.NotificationHandler
+	configHandler *handlers.ConfigHandler
+	healthHandler *handlers.HealthHandler
+	logger        *logrus.Logger
 }
 
 func NewFiberServer(
 	config *config.Config,
 	notifHandler *handlers.NotificationHandler,
 	configHandler *handlers.ConfigHandler,
-	templateHandler *handlers.TemplateHandler,
-	logger *zap.Logger,
+	healthHandler *handlers.HealthHandler,
+	logger *logrus.Logger,
 ) *FiberServer {
 	app := fiber.New(fiber.Config{
 		ReadTimeout:  config.Server.ReadTimeout,
 		WriteTimeout: config.Server.WriteTimeout,
+		IdleTimeout:  config.Server.IdleTimeout,
 		ErrorHandler: customErrorHandler,
 	})
 
 	// Global middleware
 	app.Use(recover.New())
 	app.Use(requestid.New())
-	app.Use(logger.New(logger.Config{
+	app.Use(fiberlogger.New(fiberlogger.Config{
 		Format: "[${time}] ${status} - ${latency} ${method} ${path}\n",
 	}))
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization, X-Tenant-ID",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization, X-Tenant-ID, X-Kafka-API-Key",
 		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
 	}))
 
 	server := &FiberServer{
-		app:             app,
-		config:          config,
-		notifHandler:    notifHandler,
-		configHandler:   configHandler,
-		templateHandler: templateHandler,
-		logger:          logger,
+		app:           app,
+		config:        config,
+		notifHandler:  notifHandler,
+		configHandler: configHandler,
+		healthHandler: healthHandler,
+		logger:        logger,
 	}
 
 	server.setupRoutes()
@@ -63,18 +65,20 @@ func NewFiberServer(
 }
 
 func (s *FiberServer) setupRoutes() {
-	// Health check
-	s.app.Get("/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"status":  "ok",
-			"service": "notification-engine",
-		})
-	})
+	// Health check endpoints (no auth required)
+	s.app.Get("/health", s.healthHandler.HealthCheck)
+	s.app.Get("/ready", s.healthHandler.ReadinessCheck)
+	s.app.Get("/live", s.healthHandler.LivenessCheck)
+
+	// Swagger documentation
+	if s.config.Swagger.Enabled {
+		s.app.Get("/swagger/*", swagger.HandlerDefault)
+	}
 
 	// API v1 routes
 	v1 := s.app.Group("/api/v1")
 
-	// Apply auth middleware
+	// Apply auth middleware for all API routes
 	v1.Use(middleware.AuthMiddleware())
 	v1.Use(middleware.TenantMiddleware())
 
@@ -93,28 +97,30 @@ func (s *FiberServer) setupRoutes() {
 	configs.Post("/providers/push", s.configHandler.AddPushProvider)
 	configs.Delete("/providers/:type/:name", s.configHandler.RemoveProvider)
 
-	// Template routes
-	templates := v1.Group("/templates")
-	templates.Get("/", s.templateHandler.ListTemplates)
-	templates.Get("/:id", s.templateHandler.GetTemplate)
-	templates.Post("/", s.templateHandler.CreateTemplate)
-	templates.Put("/:id", s.templateHandler.UpdateTemplate)
-	templates.Delete("/:id", s.templateHandler.DeleteTemplate)
-	templates.Post("/:id/preview", s.templateHandler.PreviewTemplate)
-
 	// Kafka API endpoints (for direct Kafka publishing)
 	kafkaAPI := v1.Group("/kafka")
 	kafkaAPI.Use(middleware.KafkaAuthMiddleware()) // Additional security for Kafka endpoints
 	kafkaAPI.Post("/publish", s.notifHandler.PublishToKafka)
+
+	// Add a catch-all route for undefined endpoints
+	s.app.Use("*", func(c *fiber.Ctx) error {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error":   "Endpoint not found",
+			"code":    "NOT_FOUND",
+			"path":    c.Path(),
+			"method":  c.Method(),
+			"message": "The requested endpoint does not exist",
+		})
+	})
 }
 
 func (s *FiberServer) Start(addr string) error {
-	s.logger.Info("starting fiber server", zap.String("address", addr))
+	s.logger.WithField("address", addr).Info("Starting Fiber server")
 	return s.app.Listen(addr)
 }
 
 func (s *FiberServer) Shutdown(ctx context.Context) error {
-	s.logger.Info("shutting down fiber server")
+	s.logger.Info("Shutting down Fiber server")
 	return s.app.ShutdownWithContext(ctx)
 }
 
@@ -131,5 +137,6 @@ func customErrorHandler(c *fiber.Ctx, err error) error {
 		"error":      message,
 		"code":       code,
 		"request_id": c.Locals("requestid"),
+		"timestamp":  time.Now(),
 	})
 }

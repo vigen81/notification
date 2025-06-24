@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sirupsen/logrus"
 	"gitlab.smartbet.am/golang/notification/internal/repository"
-	"go.uber.org/zap"
 )
 
 type EmailProviderManager struct {
@@ -14,13 +14,13 @@ type EmailProviderManager struct {
 	configRepo *repository.PartnerConfigRepository
 	providers  map[int64]EmailProvider
 	mu         sync.RWMutex
-	logger     *zap.Logger
+	logger     *logrus.Logger
 }
 
 func NewEmailProviderManager(
 	registry *ProviderRegistry,
 	configRepo *repository.PartnerConfigRepository,
-	logger *zap.Logger,
+	logger *logrus.Logger,
 ) *EmailProviderManager {
 	return &EmailProviderManager{
 		registry:   registry,
@@ -69,13 +69,13 @@ type SMSProviderManager struct {
 	configRepo *repository.PartnerConfigRepository
 	providers  map[int64]SMSProvider
 	mu         sync.RWMutex
-	logger     *zap.Logger
+	logger     *logrus.Logger
 }
 
 func NewSMSProviderManager(
 	registry *ProviderRegistry,
 	configRepo *repository.PartnerConfigRepository,
-	logger *zap.Logger,
+	logger *logrus.Logger,
 ) *SMSProviderManager {
 	return &SMSProviderManager{
 		registry:   registry,
@@ -86,32 +86,35 @@ func NewSMSProviderManager(
 }
 
 func (m *SMSProviderManager) GetProvider(tenantID int64) (SMSProvider, error) {
-	// Similar implementation to EmailProviderManager
-	return nil, fmt.Errorf("no enabled SMS provider found for tenant %d", tenantID)
-}
+	m.mu.RLock()
+	provider, exists := m.providers[tenantID]
+	m.mu.RUnlock()
 
-type PushProviderManager struct {
-	registry   *ProviderRegistry
-	configRepo *repository.PartnerConfigRepository
-	providers  map[int64]PushProvider
-	mu         sync.RWMutex
-	logger     *zap.Logger
-}
-
-func NewPushProviderManager(
-	registry *ProviderRegistry,
-	configRepo *repository.PartnerConfigRepository,
-	logger *zap.Logger,
-) *PushProviderManager {
-	return &PushProviderManager{
-		registry:   registry,
-		configRepo: configRepo,
-		providers:  make(map[int64]PushProvider),
-		logger:     logger,
+	if exists {
+		return provider, nil
 	}
-}
 
-func (m *PushProviderManager) GetProvider(tenantID int64) (PushProvider, error) {
-	// Similar implementation to EmailProviderManager
-	return nil, fmt.Errorf("no enabled push provider found for tenant %d", tenantID)
+	// Load provider configuration
+	config, err := m.configRepo.GetByTenantID(context.Background(), tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Find enabled SMS provider
+	for _, providerConfig := range config.SMSProviders {
+		if providerConfig.Enabled {
+			provider, err := m.registry.CreateSMSProvider(providerConfig)
+			if err != nil {
+				continue
+			}
+
+			m.mu.Lock()
+			m.providers[tenantID] = provider
+			m.mu.Unlock()
+
+			return provider, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no enabled SMS provider found for tenant %d", tenantID)
 }

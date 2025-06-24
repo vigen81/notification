@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"gitlab.smartbet.am/golang/notification/internal/models"
 	"gitlab.smartbet.am/golang/notification/internal/repository"
-	"go.uber.org/zap"
 )
 
 type BatchService struct {
@@ -16,7 +16,7 @@ type BatchService struct {
 	configRepo      *repository.PartnerConfigRepository
 	batches         map[string]*Batch
 	mu              sync.RWMutex
-	logger          *zap.Logger
+	logger          *logrus.Logger
 }
 
 type Batch struct {
@@ -30,7 +30,7 @@ type Batch struct {
 func NewBatchService(
 	notificationSvc *NotificationService,
 	configRepo *repository.PartnerConfigRepository,
-	logger *zap.Logger,
+	logger *logrus.Logger,
 ) *BatchService {
 	svc := &BatchService{
 		notificationSvc: notificationSvc,
@@ -53,7 +53,7 @@ func (s *BatchService) AddToBatch(ctx context.Context, req *models.NotificationR
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	batchKey := fmt.Sprintf("%d-%s-%s", req.TenantID, req.Type, req.TemplateID)
+	batchKey := fmt.Sprintf("%d-%s", req.TenantID, req.Type)
 
 	batch, exists := s.batches[batchKey]
 	if !exists {
@@ -91,11 +91,10 @@ func (s *BatchService) flushBatch(ctx context.Context, batchKey string) error {
 	// Process all requests in the batch
 	for _, req := range batch.Requests {
 		if err := s.notificationSvc.ProcessNotification(ctx, req); err != nil {
-			s.logger.Error("failed to process batch notification",
-				zap.String("batch_id", batch.ID),
-				zap.String("request_id", req.RequestID),
-				zap.Error(err),
-			)
+			s.logger.WithFields(logrus.Fields{
+				"batch_id":   batch.ID,
+				"request_id": req.RequestID,
+			}).WithError(err).Error("Failed to process batch notification")
 		}
 	}
 

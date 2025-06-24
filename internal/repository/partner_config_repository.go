@@ -5,18 +5,18 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"gitlab.smartbet.am/golang/notification/ent"
-	//"gitlab.smartbet.am/golang/notification/ent/partnerconfig"
+	"gitlab.smartbet.am/golang/notification/ent/partnerconfig"
 	"gitlab.smartbet.am/golang/notification/internal/models"
-	"go.uber.org/zap"
 )
 
 type PartnerConfigRepository struct {
 	client *ent.Client
-	logger *zap.Logger
+	logger *logrus.Logger
 }
 
-func NewPartnerConfigRepository(client *ent.Client, logger *zap.Logger) *PartnerConfigRepository {
+func NewPartnerConfigRepository(client *ent.Client, logger *logrus.Logger) *PartnerConfigRepository {
 	return &PartnerConfigRepository{
 		client: client,
 		logger: logger,
@@ -65,6 +65,7 @@ func (r *PartnerConfigRepository) Save(ctx context.Context, config *models.Partn
 			SetPushProviders(pushProviders).
 			SetBatchConfig(batchConfig).
 			SetRateLimits(rateLimits).
+			SetEnabled(config.Enabled).
 			Exec(ctx)
 	}
 
@@ -76,6 +77,7 @@ func (r *PartnerConfigRepository) Save(ctx context.Context, config *models.Partn
 		SetPushProviders(pushProviders).
 		SetBatchConfig(batchConfig).
 		SetRateLimits(rateLimits).
+		SetEnabled(config.Enabled).
 		Save(ctx)
 
 	return err
@@ -85,6 +87,7 @@ func (r *PartnerConfigRepository) entToModel(config *ent.PartnerConfig) *models.
 	model := &models.PartnerConfig{
 		ID:        config.ID,
 		TenantID:  config.TenantID,
+		Enabled:   config.Enabled,
 		CreatedAt: config.CreateTime,
 		UpdatedAt: config.UpdateTime,
 	}
@@ -105,7 +108,7 @@ func (r *PartnerConfigRepository) getDefaultConfig(tenantID int64) *models.Partn
 		EmailProviders: []models.ProviderConfig{
 			{
 				Name:     "default",
-				Type:     "sendgrid",
+				Type:     "smtp",
 				Priority: 1,
 				Enabled:  true,
 				Config:   map[string]interface{}{},
@@ -139,6 +142,7 @@ func (r *PartnerConfigRepository) getDefaultConfig(tenantID int64) *models.Partn
 			"sms":   {Limit: 500, Window: "1h", Strategy: "sliding"},
 			"push":  {Limit: 5000, Window: "1h", Strategy: "sliding"},
 		},
+		Enabled:   true,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}

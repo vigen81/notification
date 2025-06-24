@@ -5,44 +5,48 @@ import (
 	"sync"
 
 	"gitlab.smartbet.am/golang/notification/internal/models"
+	"gitlab.smartbet.am/golang/notification/internal/providers/email"
 )
 
 type ProviderRegistry struct {
-	emailFactories map[string]func(config map[string]interface{}) (EmailProvider, error)
-	smsFactories   map[string]func(config map[string]interface{}) (SMSProvider, error)
-	pushFactories  map[string]func(config map[string]interface{}) (PushProvider, error)
+	emailFactories map[string]EmailProviderFactory
+	smsFactories   map[string]SMSProviderFactory
+	pushFactories  map[string]PushProviderFactory
 	mu             sync.RWMutex
 }
 
 func NewProviderRegistry() *ProviderRegistry {
 	registry := &ProviderRegistry{
-		emailFactories: make(map[string]func(config map[string]interface{}) (EmailProvider, error)),
-		smsFactories:   make(map[string]func(config map[string]interface{}) (SMSProvider, error)),
-		pushFactories:  make(map[string]func(config map[string]interface{}) (PushProvider, error)),
+		emailFactories: make(map[string]EmailProviderFactory),
+		smsFactories:   make(map[string]SMSProviderFactory),
+		pushFactories:  make(map[string]PushProviderFactory),
 	}
 
 	// Register default providers
-	registry.RegisterEmailProvider("sendgrid", NewSendGridProvider)
-	registry.RegisterEmailProvider("sendx", NewSendXProvider)
-	registry.RegisterSMSProvider("twilio", NewTwilioProvider)
-	registry.RegisterPushProvider("fcm", NewFCMProvider)
+	registry.RegisterEmailProvider("smtp", func(config map[string]interface{}) (EmailProvider, error) {
+		provider, err := email.NewSMTPProvider(config)
+		if err != nil {
+			return nil, err
+		}
+		return provider, nil
+	})
 
 	return registry
 }
 
-func (r *ProviderRegistry) RegisterEmailProvider(name string, factory func(config map[string]interface{}) (EmailProvider, error)) {
+func (r *ProviderRegistry) RegisterEmailProvider(name string, factory EmailProviderFactory) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.emailFactories[name] = factory
 }
 
-func (r *ProviderRegistry) RegisterSMSProvider(name string, factory func(config map[string]interface{}) (SMSProvider, error)) {
+func (r *ProviderRegistry) RegisterSMSProvider(name string, factory SMSProviderFactory) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.smsFactories[name] = factory
 }
 
-func (r *ProviderRegistry) RegisterPushProvider(name string, factory func(config map[string]interface{}) (PushProvider, error)) {
+func (r *ProviderRegistry) RegisterPushProvider(name string, factory PushProviderFactory) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.pushFactories[name] = factory

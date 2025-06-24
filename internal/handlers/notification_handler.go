@@ -6,22 +6,23 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"gitlab.smartbet.am/golang/notification/internal/kafka"
+	"gitlab.smartbet.am/golang/notification/internal/logger"
 	"gitlab.smartbet.am/golang/notification/internal/models"
 	"gitlab.smartbet.am/golang/notification/internal/repository"
-	"go.uber.org/zap"
 )
 
 type NotificationHandler struct {
 	publisher *kafka.Publisher
 	notifRepo *repository.NotificationRepository
-	logger    *zap.Logger
+	logger    *logrus.Logger
 }
 
 func NewNotificationHandler(
 	publisher *kafka.Publisher,
 	notifRepo *repository.NotificationRepository,
-	logger *zap.Logger,
+	logger *logrus.Logger,
 ) *NotificationHandler {
 	return &NotificationHandler{
 		publisher: publisher,
@@ -31,6 +32,18 @@ func NewNotificationHandler(
 }
 
 // SendNotification handles HTTP requests and publishes to Kafka
+// @Summary Send a notification
+// @Description Send a single notification via HTTP API
+// @Tags notifications
+// @Accept json
+// @Produce json
+// @Param notification body models.NotificationRequest true "Notification request"
+// @Success 202 {object} models.NotificationResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /notifications/send [post]
 func (h *NotificationHandler) SendNotification(c *fiber.Ctx) error {
 	var req models.NotificationRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -66,7 +79,9 @@ func (h *NotificationHandler) SendNotification(c *fiber.Ctx) error {
 	// Publish to Kafka for async processing
 	data, err := json.Marshal(req)
 	if err != nil {
-		h.logger.Error("failed to marshal notification request", zap.Error(err))
+		logger.WithRequest(req.RequestID).Error("Failed to marshal notification request", err, map[string]interface{}{
+			"tenant_id": tenantID,
+		})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Internal server error",
 			"code":  "INTERNAL_ERROR",
@@ -74,36 +89,39 @@ func (h *NotificationHandler) SendNotification(c *fiber.Ctx) error {
 	}
 
 	if err := h.publisher.Publish(context.Background(), "notifications", req.RequestID, data); err != nil {
-		h.logger.Error("failed to publish to kafka", zap.Error(err))
+		logger.WithRequest(req.RequestID).Error("Failed to publish to Kafka", err, map[string]interface{}{
+			"tenant_id": tenantID,
+		})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to queue notification",
 			"code":  "QUEUE_ERROR",
 		})
 	}
 
-	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{
-		"request_id": req.RequestID,
-		"status":     "queued",
-		"message":    "Notification queued for processing",
-	})
+	response := models.NotificationResponse{
+		RequestID: req.RequestID,
+		Status:    "queued",
+		Message:   "Notification queued for processing",
+	}
+
+	return c.Status(fiber.StatusAccepted).JSON(response)
 }
 
 // SendBatchNotification handles batch notification requests
+// @Summary Send batch notifications
+// @Description Send multiple notifications in a batch
+// @Tags notifications
+// @Accept json
+// @Produce json
+// @Param batch body models.BatchNotificationRequest true "Batch notification request"
+// @Success 202 {object} models.BatchNotificationResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /notifications/batch [post]
 func (h *NotificationHandler) SendBatchNotification(c *fiber.Ctx) error {
-	var req struct {
-		Type       models.NotificationType `json:"type"`
-		TemplateID string                  `json:"template_id,omitempty"`
-		Recipients []string                `json:"recipients"`
-		Data       map[string]interface{}  `json:"data,omitempty"`
-		Locale     string                  `json:"locale,omitempty"`
-		ScheduleTS *int64                  `json:"schedule_ts,omitempty"`
-		From       string                  `json:"from,omitempty"`
-		ReplyTo    string                  `json:"reply_to,omitempty"`
-		Tag        string                  `json:"tag,omitempty"`
-		Body       string                  `json:"body,omitempty"`
-		Headline   string                  `json:"headline,omitempty"`
-	}
-
+	var req models.BatchNotificationRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
@@ -125,42 +143,54 @@ func (h *NotificationHandler) SendBatchNotification(c *fiber.Ctx) error {
 		}
 
 		notifReq := models.NotificationRequest{
-			RequestID:  uuid.New().String(),
-			TenantID:   tenantID,
-			Type:       req.Type,
-			TemplateID: req.TemplateID,
-			Recipients: req.Recipients[i:end],
-			Data:       req.Data,
-			BatchID:    batchID,
-			Locale:     req.Locale,
-			ScheduleTS: req.ScheduleTS,
-			From:       req.From,
-			ReplyTo:    req.ReplyTo,
-			Tag:        req.Tag,
-			Body:       req.Body,
-			Headline:   req.Headline,
+			RequestID:   uuid.New().String(),
+			TenantID:    tenantID,
+			Type:        req.Type,
+			Recipients:  req.Recipients[i:end],
+			Body:        req.Body,
+			Headline:    req.Headline,
+			From:        req.From,
+			ReplyTo:     req.ReplyTo,
+			Tag:         req.Tag,
+			ScheduleTS:  req.ScheduleTS,
+			Data:        req.Data,
+			BatchID:     batchID,
+			MessageType: req.MessageType,
 		}
 
 		data, _ := json.Marshal(notifReq)
 		if err := h.publisher.Publish(context.Background(), "notifications", notifReq.RequestID, data); err != nil {
-			h.logger.Error("failed to publish batch request",
-				zap.String("request_id", notifReq.RequestID),
-				zap.Error(err),
-			)
+			logger.WithRequest(notifReq.RequestID).Error("Failed to publish batch request", err, map[string]interface{}{
+				"batch_id":  batchID,
+				"tenant_id": tenantID,
+			})
 		} else {
 			publishedCount += len(notifReq.Recipients)
 		}
 	}
 
-	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{
-		"batch_id":          batchID,
-		"total_recipients":  len(req.Recipients),
-		"queued_recipients": publishedCount,
-		"status":            "processing",
-	})
+	response := models.BatchNotificationResponse{
+		BatchID:          batchID,
+		TotalRecipients:  len(req.Recipients),
+		QueuedRecipients: publishedCount,
+		Status:           "processing",
+	}
+
+	return c.Status(fiber.StatusAccepted).JSON(response)
 }
 
 // GetNotificationStatus retrieves notification status by request ID
+// @Summary Get notification status
+// @Description Get the status of a notification by request ID
+// @Tags notifications
+// @Produce json
+// @Param request_id path string true "Request ID"
+// @Success 200 {object} models.NotificationStatusResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 403 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /notifications/status/{request_id} [get]
 func (h *NotificationHandler) GetNotificationStatus(c *fiber.Ctx) error {
 	requestID := c.Params("request_id")
 	if requestID == "" {
@@ -188,28 +218,40 @@ func (h *NotificationHandler) GetNotificationStatus(c *fiber.Ctx) error {
 		})
 	}
 
-	response := fiber.Map{
-		"request_id": notification.RequestID,
-		"status":     notification.Status,
-		"type":       notification.Type,
-		"created_at": notification.CreateTime,
-		"updated_at": notification.UpdateTime,
+	response := models.NotificationStatusResponse{
+		RequestID: notification.RequestID,
+		Status:    string(notification.Status),
+		Type:      string(notification.Type),
+		CreatedAt: notification.CreateTime,
+		UpdatedAt: notification.UpdateTime,
 	}
 
 	if notification.ErrorMessage != nil {
-		response["error_message"] = *notification.ErrorMessage
+		response.ErrorMessage = notification.ErrorMessage
 	}
 
 	if notification.ScheduleTs != nil {
-		response["schedule_ts"] = *notification.ScheduleTs
+		response.ScheduleTS = notification.ScheduleTs
 	}
 
 	return c.JSON(response)
 }
 
 // PublishToKafka handles direct Kafka publishing
+// @Summary Publish to Kafka
+// @Description Directly publish a notification to Kafka
+// @Tags kafka
+// @Accept json
+// @Produce json
+// @Param notification body models.KafkaNotificationRequest true "Kafka notification request"
+// @Success 200 {object} models.KafkaResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /kafka/publish [post]
 func (h *NotificationHandler) PublishToKafka(c *fiber.Ctx) error {
-	var req models.NotificationRequest
+	var req models.KafkaNotificationRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
@@ -217,13 +259,20 @@ func (h *NotificationHandler) PublishToKafka(c *fiber.Ctx) error {
 		})
 	}
 
-	// Generate request ID if not provided
-	if req.RequestID == "" {
-		req.RequestID = uuid.New().String()
+	// Convert to standard notification request
+	notifReq := models.NotificationRequest{
+		RequestID:   uuid.New().String(),
+		TenantID:    req.TenantID,
+		Type:        req.Type,
+		Recipients:  req.Recipients,
+		Body:        req.Body,
+		Headline:    req.Headline,
+		MessageType: req.MessageType,
+		Data:        req.Data,
 	}
 
 	// Publish to Kafka
-	data, err := json.Marshal(req)
+	data, err := json.Marshal(notifReq)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to process request",
@@ -231,17 +280,19 @@ func (h *NotificationHandler) PublishToKafka(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := h.publisher.Publish(context.Background(), "notifications", req.RequestID, data); err != nil {
+	if err := h.publisher.Publish(context.Background(), "notifications", notifReq.RequestID, data); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to publish to Kafka",
 			"code":  "PUBLISH_ERROR",
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"request_id": req.RequestID,
-		"status":     "published",
-	})
+	response := models.KafkaResponse{
+		RequestID: notifReq.RequestID,
+		Status:    "published",
+	}
+
+	return c.JSON(response)
 }
 
 func (h *NotificationHandler) validateRequest(req *models.NotificationRequest) error {
@@ -253,8 +304,16 @@ func (h *NotificationHandler) validateRequest(req *models.NotificationRequest) e
 		return fiber.NewError(fiber.StatusBadRequest, "Notification type is required")
 	}
 
-	if req.TemplateID == "" && req.Body == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "Either template_id or body is required")
+	if req.Body == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Body is required")
+	}
+
+	// Validate notification type
+	switch req.Type {
+	case models.TypeEmail, models.TypeSMS, models.TypePush:
+		// Valid types
+	default:
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid notification type")
 	}
 
 	return nil

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
@@ -15,8 +14,8 @@ type Config struct {
 	Database      DatabaseConfig      `yaml:"database"`
 	Kafka         KafkaConfig         `yaml:"kafka"`
 	Providers     ProvidersConfig     `yaml:"providers"`
-	Localization  LocalizationConfig  `yaml:"localization"`
 	BatchDefaults BatchDefaultsConfig `yaml:"batch_defaults"`
+	Swagger       SwaggerConfig       `yaml:"swagger"`
 }
 
 type ServerConfig struct {
@@ -67,17 +66,18 @@ type FCMDefaults struct {
 	ValidateOnly bool `yaml:"validate_only"`
 }
 
-type LocalizationConfig struct {
-	DefaultLocale    string   `yaml:"default_locale"`
-	SupportedLocales []string `yaml:"supported_locales"`
-	TranslationsPath string   `yaml:"translations_path"`
-}
-
 type BatchDefaultsConfig struct {
 	MaxBatchSize  int           `yaml:"max_batch_size"`
 	FlushInterval time.Duration `yaml:"flush_interval"`
 	MaxRetries    int           `yaml:"max_retries"`
 	RetryBackoff  time.Duration `yaml:"retry_backoff"`
+}
+
+type SwaggerConfig struct {
+	Enabled bool   `yaml:"enabled"`
+	Host    string `yaml:"host"`
+	Title   string `yaml:"title"`
+	Version string `yaml:"version"`
 }
 
 func NewConfig() (*Config, error) {
@@ -112,6 +112,9 @@ func (c *Config) setDefaults() {
 	if c.Server.WriteTimeout == 0 {
 		c.Server.WriteTimeout = 15 * time.Second
 	}
+	if c.Server.IdleTimeout == 0 {
+		c.Server.IdleTimeout = 120 * time.Second
+	}
 	if c.Database.MaxOpenConns == 0 {
 		c.Database.MaxOpenConns = 25
 	}
@@ -130,6 +133,21 @@ func (c *Config) setDefaults() {
 	if c.BatchDefaults.FlushInterval == 0 {
 		c.BatchDefaults.FlushInterval = 10 * time.Second
 	}
+	if c.BatchDefaults.MaxRetries == 0 {
+		c.BatchDefaults.MaxRetries = 3
+	}
+	if c.BatchDefaults.RetryBackoff == 0 {
+		c.BatchDefaults.RetryBackoff = 5 * time.Second
+	}
+	if c.Swagger.Title == "" {
+		c.Swagger.Title = "Notification Engine API"
+	}
+	if c.Swagger.Version == "" {
+		c.Swagger.Version = "1.0"
+	}
+	if c.Swagger.Host == "" {
+		c.Swagger.Host = "localhost:8080"
+	}
 }
 
 func (c *Config) overrideWithEnv() {
@@ -147,10 +165,12 @@ func (c *Config) overrideWithEnv() {
 	}
 }
 
-func NewLogger() (*zap.Logger, error) {
-	env := os.Getenv("ENVIRONMENT")
-	if env == "production" {
-		return zap.NewProduction()
-	}
-	return zap.NewDevelopment()
+func (c *Config) GetDSN() string {
+	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
+		c.Database.User,
+		c.Database.Password,
+		c.Database.Host,
+		c.Database.Port,
+		c.Database.Database,
+	)
 }

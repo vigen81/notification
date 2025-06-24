@@ -4,16 +4,16 @@ import (
 	"context"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"gitlab.smartbet.am/golang/notification/ent/notification"
 	"gitlab.smartbet.am/golang/notification/internal/repository"
 	"gitlab.smartbet.am/golang/notification/internal/services"
-	"go.uber.org/zap"
 )
 
 type SchedulerWorker struct {
 	notifRepo       *repository.NotificationRepository
 	notificationSvc *services.NotificationService
-	logger          *zap.Logger
+	logger          *logrus.Logger
 	ticker          *time.Ticker
 	stopChan        chan struct{}
 }
@@ -21,7 +21,7 @@ type SchedulerWorker struct {
 func NewSchedulerWorker(
 	notifRepo *repository.NotificationRepository,
 	notificationSvc *services.NotificationService,
-	logger *zap.Logger,
+	logger *logrus.Logger,
 ) *SchedulerWorker {
 	return &SchedulerWorker{
 		notifRepo:       notifRepo,
@@ -36,7 +36,7 @@ func (w *SchedulerWorker) Start(ctx context.Context) error {
 
 	go w.run(ctx)
 
-	w.logger.Info("scheduler worker started")
+	w.logger.Info("Scheduler worker started")
 	return nil
 }
 
@@ -51,10 +51,10 @@ func (w *SchedulerWorker) run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			w.logger.Info("scheduler worker stopping due to context cancellation")
+			w.logger.Info("Scheduler worker stopping due to context cancellation")
 			return
 		case <-w.stopChan:
-			w.logger.Info("scheduler worker stopping")
+			w.logger.Info("Scheduler worker stopping")
 			return
 		case <-w.ticker.C:
 			w.processScheduledNotifications(ctx)
@@ -68,7 +68,7 @@ func (w *SchedulerWorker) processScheduledNotifications(ctx context.Context) {
 	// Get all pending scheduled notifications that are due
 	notifications, err := w.notifRepo.GetPendingScheduled(ctx, now)
 	if err != nil {
-		w.logger.Error("failed to get scheduled notifications", zap.Error(err))
+		w.logger.WithError(err).Error("Failed to get scheduled notifications")
 		return
 	}
 
@@ -76,15 +76,14 @@ func (w *SchedulerWorker) processScheduledNotifications(ctx context.Context) {
 		return
 	}
 
-	w.logger.Info("processing scheduled notifications", zap.Int("count", len(notifications)))
+	w.logger.WithField("count", len(notifications)).Info("Processing scheduled notifications")
 
 	for _, notif := range notifications {
 		// Update status to ACTIVE to prevent duplicate processing
 		if err := w.notifRepo.UpdateStatus(ctx, notif.ID, notification.StatusACTIVE, nil); err != nil {
-			w.logger.Error("failed to update notification status",
-				zap.Int("notification_id", notif.ID),
-				zap.Error(err),
-			)
+			w.logger.WithFields(logrus.Fields{
+				"notification_id": notif.ID,
+			}).WithError(err).Error("Failed to update notification status")
 			continue
 		}
 
@@ -92,10 +91,9 @@ func (w *SchedulerWorker) processScheduledNotifications(ctx context.Context) {
 		if err := w.notificationSvc.ProcessStoredNotification(ctx, notif); err != nil {
 			errorMsg := err.Error()
 			w.notifRepo.UpdateStatus(ctx, notif.ID, notification.StatusFAILED, &errorMsg)
-			w.logger.Error("failed to process scheduled notification",
-				zap.Int("notification_id", notif.ID),
-				zap.Error(err),
-			)
+			w.logger.WithFields(logrus.Fields{
+				"notification_id": notif.ID,
+			}).WithError(err).Error("Failed to process scheduled notification")
 		}
 	}
 }

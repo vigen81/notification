@@ -9,9 +9,9 @@ import (
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/sirupsen/logrus"
 	"gitlab.smartbet.am/golang/notification/ent"
 	"gitlab.smartbet.am/golang/notification/internal/config"
-	"go.uber.org/zap"
 )
 
 var Database *ent.Client
@@ -35,10 +35,15 @@ func NewDatabase(cfg *config.Config) (*sql.DB, error) {
 	db.SetMaxIdleConns(cfg.Database.MaxIdleConns)
 	db.SetConnMaxLifetime(time.Duration(cfg.Database.ConnMaxLifetime) * time.Second)
 
+	// Test connection
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
 	return db, nil
 }
 
-func NewEntClient(db *sql.DB, logger *zap.Logger) (*ent.Client, error) {
+func NewEntClient(db *sql.DB, logger *logrus.Logger) (*ent.Client, error) {
 	drv := entsql.OpenDB(dialect.MySQL, db)
 	client := ent.NewClient(ent.Driver(drv))
 
@@ -48,5 +53,6 @@ func NewEntClient(db *sql.DB, logger *zap.Logger) (*ent.Client, error) {
 	}
 
 	Database = client
+	logger.Info("Database connection established and schema created")
 	return client, nil
 }

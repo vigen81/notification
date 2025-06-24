@@ -10,12 +10,14 @@ bin/
 
 # Output of the go coverage tool
 *.out
+coverage.html
 
 # Dependency directories
 vendor/
 
 # Go workspace file
 go.work
+go.work.sum
 
 # Environment variables
 .env
@@ -44,5 +46,31 @@ build/
 *.db
 *.sqlite
 
-# Generated files
-ent/
+# Generated Ent files (keep only schemas)
+ent/*.go
+ent/migrate/
+ent/notification/
+ent/partnerconfig/
+ent/predicate/
+ent/runtime/
+ent/hook/
+ent/intercept/
+
+# Keep these ent files
+!ent/generate.go
+!ent/schema/
+
+# Generated Swagger docs
+docs/docs.go
+docs/swagger.json
+docs/swagger.yaml
+
+# Temporary files
+tmp/
+temp/
+
+# Docker volumes
+.docker/
+
+# Test cache
+.testcache/

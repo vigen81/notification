@@ -31,19 +31,19 @@ providers:
   fcm:
     validate_only: false
 
-localization:
-  default_locale: en
-  supported_locales:
-    - en
-    - es
-    - fr
-    - de
-    - ru
-    - hy
-  translations_path: ./translations
-
 batch_defaults:
   max_batch_size: 100
   flush_interval: 10s
   max_retries: 3
   retry_backoff: 5s
+
+swagger:
+  enabled: true
+  host: localhost:8080
+  title: Notification Engine API
+  version: 1.0
+
+# Graylog configuration - uses external service
+logging:
+  graylog_addr: gelf-udp-service:12222  # External Graylog service
+  service_name: notification-engine

@@ -2,21 +2,21 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/sirupsen/logrus"
 	"gitlab.smartbet.am/golang/notification/ent"
-	//"gitlab.smartbet.am/golang/notification/ent/notification"
+	"gitlab.smartbet.am/golang/notification/ent/notification"
+	"gitlab.smartbet.am/golang/notification/ent/schema"
 	"gitlab.smartbet.am/golang/notification/internal/models"
 	"gitlab.smartbet.am/golang/notification/types"
-	"go.uber.org/zap"
 )
 
 type NotificationRepository struct {
 	client *ent.Client
-	logger *zap.Logger
+	logger *logrus.Logger
 }
 
-func NewNotificationRepository(client *ent.Client, logger *zap.Logger) *NotificationRepository {
+func NewNotificationRepository(client *ent.Client, logger *logrus.Logger) *NotificationRepository {
 	return &NotificationRepository{
 		client: client,
 		logger: logger,
@@ -47,15 +47,19 @@ func (r *NotificationRepository) Create(ctx context.Context, req *models.Notific
 	if req.ScheduleTS != nil {
 		create.SetScheduleTs(*req.ScheduleTS)
 	}
+	if req.BatchID != "" {
+		create.SetBatchID(req.BatchID)
+	}
 	if req.Meta != nil {
-		meta := &ent.NotificationMeta{
+		// Use the schema structs
+		meta := &schema.NotificationMeta{
 			Service:    req.Meta.Service,
 			TemplateID: req.Meta.TemplateID,
 			Params:     req.Meta.Params,
 			Data:       req.Meta.Data,
 		}
 		if req.Meta.Attachment != nil {
-			meta.Attachment = &ent.Attachment{
+			meta.Attachment = &schema.Attachment{
 				Filename:    req.Meta.Attachment.Filename,
 				Content:     req.Meta.Attachment.Content,
 				Disposition: req.Meta.Attachment.Disposition,
@@ -78,7 +82,7 @@ func (r *NotificationRepository) GetByRequestIDAndStatus(ctx context.Context, re
 	return r.client.Notification.Query().
 		Where(
 			notification.RequestID(requestID),
-			notification.Status(status),
+			notification.StatusEQ(status),
 		).
 		All(ctx)
 }
@@ -108,7 +112,7 @@ func (r *NotificationRepository) GetByTenantAndStatus(ctx context.Context, tenan
 	return r.client.Notification.Query().
 		Where(
 			notification.TenantID(tenantID),
-			notification.Status(status),
+			notification.StatusEQ(status),
 		).
 		Limit(limit).
 		All(ctx)

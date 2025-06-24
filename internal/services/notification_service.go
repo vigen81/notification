@@ -3,161 +3,185 @@ package services
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"gitlab.smartbet.am/golang/notification/ent"
-	//"gitlab.smartbet.am/golang/notification/ent/notification"
+	"gitlab.smartbet.am/golang/notification/ent/notification"
+	"gitlab.smartbet.am/golang/notification/internal/logger"
 	"gitlab.smartbet.am/golang/notification/internal/models"
 	"gitlab.smartbet.am/golang/notification/internal/providers"
 	"gitlab.smartbet.am/golang/notification/internal/repository"
-	"go.uber.org/zap"
 )
 
 type NotificationService struct {
-	notifRepo       *repository.NotificationRepository
-	configRepo      *repository.PartnerConfigRepository
-	templateSvc     *TemplateService
-	localizationSvc *LocalizationService
-	emailManager    *providers.EmailProviderManager
-	smsManager      *providers.SMSProviderManager
-	pushManager     *providers.PushProviderManager
-	logger          *zap.Logger
+	notifRepo    *repository.NotificationRepository
+	configRepo   *repository.PartnerConfigRepository
+	emailManager *providers.EmailProviderManager
+	smsManager   *providers.SMSProviderManager
+	logger       *logrus.Logger
 }
 
 func NewNotificationService(
 	notifRepo *repository.NotificationRepository,
 	configRepo *repository.PartnerConfigRepository,
-	templateSvc *TemplateService,
-	localizationSvc *LocalizationService,
 	emailManager *providers.EmailProviderManager,
 	smsManager *providers.SMSProviderManager,
-	pushManager *providers.PushProviderManager,
-	logger *zap.Logger,
+	logger *logrus.Logger,
 ) *NotificationService {
 	return &NotificationService{
-		notifRepo:       notifRepo,
-		configRepo:      configRepo,
-		templateSvc:     templateSvc,
-		localizationSvc: localizationSvc,
-		emailManager:    emailManager,
-		smsManager:      smsManager,
-		pushManager:     pushManager,
-		logger:          logger,
+		notifRepo:    notifRepo,
+		configRepo:   configRepo,
+		emailManager: emailManager,
+		smsManager:   smsManager,
+		logger:       logger,
 	}
 }
 
+// ProcessNotification processes a notification request
 func (s *NotificationService) ProcessNotification(ctx context.Context, req *models.NotificationRequest) error {
+	log := logger.WithRequest(req.RequestID)
+
 	// Generate request ID if not provided
 	if req.RequestID == "" {
 		req.RequestID = uuid.New().String()
 	}
 
+	log.Info("Processing notification request", map[string]interface{}{
+		"tenant_id":  req.TenantID,
+		"type":       req.Type,
+		"recipients": len(req.Recipients),
+		"batch_id":   req.BatchID,
+	})
+
 	// Get partner configuration
 	config, err := s.configRepo.GetByTenantID(ctx, req.TenantID)
 	if err != nil {
+		log.Error("Failed to get partner config", err, map[string]interface{}{
+			"tenant_id": req.TenantID,
+		})
 		return fmt.Errorf("failed to get partner config: %w", err)
 	}
 
-	// Process template if template ID is provided
-	if req.TemplateID != "" {
-		template, err := s.templateSvc.GetTemplate(ctx, req.TenantID, req.TemplateID)
+	// Store notifications in database first
+	var notifications []*ent.Notification
+	for _, recipient := range req.Recipients {
+		notif, err := s.notifRepo.Create(ctx, req, recipient)
 		if err != nil {
-			return fmt.Errorf("failed to get template: %w", err)
+			log.Error("Failed to store notification in database", err, map[string]interface{}{
+				"recipient": recipient,
+				"tenant_id": req.TenantID,
+			})
+			continue // Continue with other recipients
 		}
-
-		// Process template with localization
-		body, headline, err := s.templateSvc.ProcessTemplate(ctx, template, req.Data, req.Locale)
-		if err != nil {
-			return fmt.Errorf("failed to process template: %w", err)
-		}
-
-		req.Body = body
-		if headline != "" {
-			req.Headline = headline
-		}
+		notifications = append(notifications, notif)
 	}
 
-	// Get notifications from database
-	notifications, err := s.notifRepo.GetByRequestIDAndStatus(ctx, req.RequestID, notification.StatusPENDING)
-	if err != nil {
-		return fmt.Errorf("failed to get notifications: %w", err)
+	if len(notifications) == 0 {
+		return fmt.Errorf("failed to store any notifications in database")
 	}
 
-	// Check if batch processing is enabled
+	// Check if scheduled for future
+	if req.ScheduleTS != nil && *req.ScheduleTS > 0 {
+		log.Info("Notification scheduled for future", map[string]interface{}{
+			"schedule_ts": *req.ScheduleTS,
+			"count":       len(notifications),
+		})
+		return nil // Scheduler worker will handle it
+	}
+
+	// Process notifications immediately
 	if config.BatchConfig.Enabled && len(notifications) > 1 {
-		return s.processBatch(ctx, notifications, config)
+		return s.processBatch(ctx, notifications, config, req.MessageType)
 	}
 
 	// Process individual notifications
 	for _, notif := range notifications {
-		if err := s.sendNotification(ctx, notif, config); err != nil {
-			errorMsg := err.Error()
-			s.notifRepo.UpdateStatus(ctx, notif.ID, notification.StatusFAILED, &errorMsg)
-			s.logger.Error("failed to send notification",
-				zap.Int("notification_id", notif.ID),
-				zap.Error(err),
-			)
+		if err := s.sendNotification(ctx, notif, config, req.MessageType); err != nil {
+			s.updateNotificationStatus(ctx, notif.ID, notification.StatusFAILED, err.Error())
+			log.Error("Failed to send notification", err, map[string]interface{}{
+				"notification_id": notif.ID,
+				"recipient":       string(notif.Address),
+			})
 		} else {
-			s.notifRepo.UpdateStatus(ctx, notif.ID, notification.StatusCOMPLETED, nil)
+			s.updateNotificationStatus(ctx, notif.ID, notification.StatusCOMPLETED, "")
+			log.Info("Notification sent successfully", map[string]interface{}{
+				"notification_id": notif.ID,
+				"recipient":       string(notif.Address),
+			})
 		}
 	}
 
 	return nil
 }
 
+// ProcessStoredNotification processes a notification that's already stored in database
 func (s *NotificationService) ProcessStoredNotification(ctx context.Context, notif *ent.Notification) error {
+	log := logger.WithRequest(notif.RequestID)
+
 	// Get partner configuration
 	config, err := s.configRepo.GetByTenantID(ctx, notif.TenantID)
 	if err != nil {
 		return fmt.Errorf("failed to get partner config: %w", err)
 	}
 
+	// Determine message type from notification meta or default to system
+	messageType := models.MessageTypeSystem
+	if notif.Meta != nil && notif.Meta.Params != nil {
+		if mt, exists := notif.Meta.Params["message_type"]; exists {
+			if mtStr, ok := mt.(string); ok {
+				messageType = models.MessageType(mtStr)
+			}
+		}
+	}
+
 	// Send the notification
-	if err := s.sendNotification(ctx, notif, config); err != nil {
-		errorMsg := err.Error()
-		s.notifRepo.UpdateStatus(ctx, notif.ID, notification.StatusFAILED, &errorMsg)
+	if err := s.sendNotification(ctx, notif, config, messageType); err != nil {
+		s.updateNotificationStatus(ctx, notif.ID, notification.StatusFAILED, err.Error())
+		log.Error("Failed to send stored notification", err, map[string]interface{}{
+			"notification_id": notif.ID,
+		})
 		return err
 	}
 
-	s.notifRepo.UpdateStatus(ctx, notif.ID, notification.StatusCOMPLETED, nil)
+	s.updateNotificationStatus(ctx, notif.ID, notification.StatusCOMPLETED, "")
+	log.Info("Stored notification sent successfully", map[string]interface{}{
+		"notification_id": notif.ID,
+	})
+
 	return nil
 }
 
-func (s *NotificationService) sendNotification(ctx context.Context, notif *ent.Notification, config *models.PartnerConfig) error {
-	var templateData map[string]interface{}
-	if notif.Meta != nil && notif.Meta.Params != nil {
-		templateData = notif.Meta.Params
-	}
-
+// sendNotification sends a single notification using the appropriate provider
+func (s *NotificationService) sendNotification(ctx context.Context, notif *ent.Notification, config *models.PartnerConfig, messageType models.MessageType) error {
 	switch notif.Type {
 	case notification.TypeEMAIL:
 		provider, err := s.emailManager.GetProvider(notif.TenantID)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get email provider: %w", err)
 		}
-		return provider.Send(ctx, notif, templateData)
+		return provider.Send(ctx, notif, messageType)
 
 	case notification.TypeSMS:
 		provider, err := s.smsManager.GetProvider(notif.TenantID)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get SMS provider: %w", err)
 		}
-		return provider.Send(ctx, notif, templateData)
+		return provider.Send(ctx, notif, messageType)
 
 	case notification.TypePUSH:
-		provider, err := s.pushManager.GetProvider(notif.TenantID)
-		if err != nil {
-			return err
-		}
-		return provider.Send(ctx, notif, templateData)
+		// TODO: Implement push provider when available
+		return fmt.Errorf("push notifications not yet implemented")
 
 	default:
 		return fmt.Errorf("unsupported notification type: %s", notif.Type)
 	}
 }
 
-func (s *NotificationService) processBatch(ctx context.Context, notifications []*ent.Notification, config *models.PartnerConfig) error {
+// processBatch processes multiple notifications as a batch
+func (s *NotificationService) processBatch(ctx context.Context, notifications []*ent.Notification, config *models.PartnerConfig, messageType models.MessageType) error {
+	log := logger.To("batch_processor")
+
 	// Group notifications by type
 	grouped := make(map[notification.Type][]*ent.Notification)
 	for _, notif := range notifications {
@@ -171,6 +195,12 @@ func (s *NotificationService) processBatch(ctx context.Context, notifications []
 			batchSize = 100
 		}
 
+		log.Info("Processing batch", map[string]interface{}{
+			"type":       notifType,
+			"total":      len(group),
+			"batch_size": batchSize,
+		})
+
 		for i := 0; i < len(group); i += batchSize {
 			end := i + batchSize
 			if end > len(group) {
@@ -178,17 +208,24 @@ func (s *NotificationService) processBatch(ctx context.Context, notifications []
 			}
 
 			batch := group[i:end]
-			if err := s.sendBatch(ctx, batch, notifType, config); err != nil {
+			if err := s.sendBatch(ctx, batch, notifType, messageType); err != nil {
 				// Update status for failed batch
 				for _, notif := range batch {
-					errorMsg := err.Error()
-					s.notifRepo.UpdateStatus(ctx, notif.ID, notification.StatusFAILED, &errorMsg)
+					s.updateNotificationStatus(ctx, notif.ID, notification.StatusFAILED, err.Error())
 				}
+				log.Error("Failed to send batch", err, map[string]interface{}{
+					"batch_size": len(batch),
+					"type":       notifType,
+				})
 			} else {
 				// Update status for successful batch
 				for _, notif := range batch {
-					s.notifRepo.UpdateStatus(ctx, notif.ID, notification.StatusCOMPLETED, nil)
+					s.updateNotificationStatus(ctx, notif.ID, notification.StatusCOMPLETED, "")
 				}
+				log.Info("Batch sent successfully", map[string]interface{}{
+					"batch_size": len(batch),
+					"type":       notifType,
+				})
 			}
 		}
 	}
@@ -196,41 +233,53 @@ func (s *NotificationService) processBatch(ctx context.Context, notifications []
 	return nil
 }
 
-func (s *NotificationService) sendBatch(ctx context.Context, notifications []*ent.Notification, notifType notification.Type, config *models.PartnerConfig) error {
+// sendBatch sends a batch of notifications
+func (s *NotificationService) sendBatch(ctx context.Context, notifications []*ent.Notification, notifType notification.Type, messageType models.MessageType) error {
 	if len(notifications) == 0 {
 		return nil
 	}
 
 	tenantID := notifications[0].TenantID
-	var templateData map[string]interface{}
 
 	switch notifType {
 	case notification.TypeEMAIL:
 		provider, err := s.emailManager.GetProvider(tenantID)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get email provider: %w", err)
 		}
-		return provider.SendBatch(ctx, notifications, templateData)
+		return provider.SendBatch(ctx, notifications, messageType)
 
 	case notification.TypeSMS:
 		provider, err := s.smsManager.GetProvider(tenantID)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get SMS provider: %w", err)
 		}
-		return provider.SendBatch(ctx, notifications, templateData)
+		return provider.SendBatch(ctx, notifications, messageType)
 
 	case notification.TypePUSH:
-		provider, err := s.pushManager.GetProvider(tenantID)
-		if err != nil {
-			return err
-		}
-		return provider.SendBatch(ctx, notifications, templateData)
+		// TODO: Implement push provider batch sending
+		return fmt.Errorf("push notification batching not yet implemented")
 
 	default:
 		return fmt.Errorf("unsupported notification type for batch: %s", notifType)
 	}
 }
 
+// updateNotificationStatus updates the status of a notification
+func (s *NotificationService) updateNotificationStatus(ctx context.Context, notificationID int, status notification.Status, errorMsg string) {
+	var errorMsgPtr *string
+	if errorMsg != "" {
+		errorMsgPtr = &errorMsg
+	}
+
+	if err := s.notifRepo.UpdateStatus(ctx, notificationID, status, errorMsgPtr); err != nil {
+		s.logger.WithField("notification_id", notificationID).
+			WithError(err).
+			Error("Failed to update notification status")
+	}
+}
+
+// GetNotification retrieves a notification by request ID for a specific tenant
 func (s *NotificationService) GetNotification(ctx context.Context, tenantID int64, requestID string) (*ent.Notification, error) {
 	notif, err := s.notifRepo.GetByRequestID(ctx, requestID)
 	if err != nil {

@@ -1,0 +1,387 @@
+openapi: 3.0.0
+info:
+  title: Notification Engine API
+  description: Multi-tenant notification engine supporting Email, SMS, and Push notifications
+  version: 1.0.0
+  contact:
+    name: API Support
+    url: http://www.swagger.io/support
+    email: support@swagger.io
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /notifications/send:
+    post:
+      tags:
+        - notifications
+      summary: Send a notification
+      description: Send a single notification via HTTP API
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+      responses:
+        '202':
+          description: Notification queued successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+
+  /notifications/batch:
+    post:
+      tags:
+        - notifications
+      summary: Send batch notifications
+      description: Send multiple notifications in a batch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchNotificationRequest'
+      responses:
+        '202':
+          description: Batch notifications queued successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchNotificationResponse'
+
+  /notifications/status/{request_id}:
+    get:
+      tags:
+        - notifications
+      summary: Get notification status
+      description: Get the status of a notification by request ID
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationStatusResponse'
+
+  /config:
+    get:
+      tags:
+        - configuration
+      summary: Get partner configuration
+      description: Get the configuration for the authenticated tenant
+      responses:
+        '200':
+          description: Configuration retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerConfig'
+    put:
+      tags:
+        - configuration
+      summary: Update partner configuration
+      description: Update the configuration for the authenticated tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnerConfigRequest'
+      responses:
+        '200':
+          description: Configuration updated successfully
+
+  /config/providers/email:
+    post:
+      tags:
+        - configuration
+      summary: Add email provider
+      description: Add a new email provider to the tenant configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddProviderRequest'
+      responses:
+        '201':
+          description: Email provider added successfully
+
+  /kafka/publish:
+    post:
+      tags:
+        - kafka
+      summary: Publish to Kafka
+      description: Directly publish a notification to Kafka
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KafkaNotificationRequest'
+      responses:
+        '200':
+          description: Message published to Kafka successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KafkaResponse'
+
+  /health:
+    get:
+      tags:
+        - health
+      summary: Health check
+      description: Returns the health status of the notification engine
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    NotificationRequest:
+      type: object
+      required:
+        - type
+        - recipients
+        - body
+      properties:
+        request_id:
+          type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        tenant_id:
+          type: integer
+          format: int64
+          example: 123
+        type:
+          type: string
+          enum: [EMAIL, SMS, PUSH]
+          example: EMAIL
+        recipients:
+          type: array
+          items:
+            type: string
+          example: ["user@example.com", "+1234567890"]
+        body:
+          type: string
+          example: "Hello World! This is your notification."
+        headline:
+          type: string
+          example: "Important Notification"
+        from:
+          type: string
+          example: "noreply@example.com"
+        reply_to:
+          type: string
+          example: "support@example.com"
+        tag:
+          type: string
+          example: "marketing"
+        schedule_ts:
+          type: integer
+          format: int64
+          example: 1640995200
+        message_type:
+          type: string
+          enum: [bonus, promo, report, system, payment, support]
+          example: bonus
+        data:
+          type: object
+
+    NotificationResponse:
+      type: object
+      properties:
+        request_id:
+          type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        status:
+          type: string
+          example: "queued"
+        message:
+          type: string
+          example: "Notification queued for processing"
+
+    BatchNotificationRequest:
+      type: object
+      required:
+        - type
+        - recipients
+        - body
+      properties:
+        type:
+          type: string
+          enum: [EMAIL, SMS, PUSH]
+        recipients:
+          type: array
+          items:
+            type: string
+        body:
+          type: string
+        headline:
+          type: string
+        message_type:
+          type: string
+          enum: [bonus, promo, report, system, payment, support]
+
+    BatchNotificationResponse:
+      type: object
+      properties:
+        batch_id:
+          type: string
+        total_recipients:
+          type: integer
+        queued_recipients:
+          type: integer
+        status:
+          type: string
+
+    NotificationStatusResponse:
+      type: object
+      properties:
+        request_id:
+          type: string
+        status:
+          type: string
+        type:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        error_message:
+          type: string
+        schedule_ts:
+          type: integer
+          format: int64
+
+    PartnerConfig:
+      type: object
+      properties:
+        tenant_id:
+          type: integer
+          format: int64
+        email_providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderConfig'
+        sms_providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderConfig'
+        batch_config:
+          $ref: '#/components/schemas/BatchConfig'
+
+    ProviderConfig:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        priority:
+          type: integer
+        enabled:
+          type: boolean
+        config:
+          type: object
+
+    BatchConfig:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        max_batch_size:
+          type: integer
+        flush_interval_seconds:
+          type: integer
+
+    PartnerConfigRequest:
+      type: object
+      properties:
+        email_providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderConfig'
+
+    AddProviderRequest:
+      type: object
+      required:
+        - name
+        - type
+        - config
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        priority:
+          type: integer
+        enabled:
+          type: boolean
+        config:
+          type: object
+
+    KafkaNotificationRequest:
+      type: object
+      required:
+        - tenant_id
+        - type
+        - recipients
+        - body
+      properties:
+        tenant_id:
+          type: integer
+          format: int64
+        type:
+          type: string
+          enum: [EMAIL, SMS, PUSH]
+        recipients:
+          type: array
+          items:
+            type: string
+        body:
+          type: string
+        headline:
+          type: string
+        message_type:
+          type: string
+          enum: [bonus, promo, report, system, payment, support]
+
+    KafkaResponse:
+      type: object
+      properties:
+        request_id:
+          type: string
+        status:
+          type: string
