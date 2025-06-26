@@ -6,6 +6,7 @@ import (
 
 	"gitlab.smartbet.am/golang/notification/internal/models"
 	"gitlab.smartbet.am/golang/notification/internal/providers/email"
+	"gitlab.smartbet.am/golang/notification/internal/providers/sms"
 )
 
 type ProviderRegistry struct {
@@ -22,7 +23,7 @@ func NewProviderRegistry() *ProviderRegistry {
 		pushFactories:  make(map[string]PushProviderFactory),
 	}
 
-	// Register default providers
+	// Register email providers
 	registry.RegisterEmailProvider("smtp", func(config map[string]interface{}) (EmailProvider, error) {
 		provider, err := email.NewSMTPProvider(config)
 		if err != nil {
@@ -30,6 +31,24 @@ func NewProviderRegistry() *ProviderRegistry {
 		}
 		return provider, nil
 	})
+
+	// Register SMS providers
+	registry.RegisterSMSProvider("twilio", func(config map[string]interface{}) (SMSProvider, error) {
+		provider, err := sms.NewTwilioProvider(config)
+		if err != nil {
+			return nil, err
+		}
+		return provider, nil
+	})
+
+	// TODO: Register push providers when implemented
+	// registry.RegisterPushProvider("fcm", func(config map[string]interface{}) (PushProvider, error) {
+	//     provider, err := push.NewFCMProvider(config)
+	//     if err != nil {
+	//         return nil, err
+	//     }
+	//     return provider, nil
+	// })
 
 	return registry
 }
@@ -86,4 +105,40 @@ func (r *ProviderRegistry) CreatePushProvider(config models.ProviderConfig) (Pus
 	}
 
 	return factory(config.Config)
+}
+
+// GetRegisteredEmailProviders returns a list of registered email provider types
+func (r *ProviderRegistry) GetRegisteredEmailProviders() []string {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	providers := make([]string, 0, len(r.emailFactories))
+	for name := range r.emailFactories {
+		providers = append(providers, name)
+	}
+	return providers
+}
+
+// GetRegisteredSMSProviders returns a list of registered SMS provider types
+func (r *ProviderRegistry) GetRegisteredSMSProviders() []string {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	providers := make([]string, 0, len(r.smsFactories))
+	for name := range r.smsFactories {
+		providers = append(providers, name)
+	}
+	return providers
+}
+
+// GetRegisteredPushProviders returns a list of registered push provider types
+func (r *ProviderRegistry) GetRegisteredPushProviders() []string {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	providers := make([]string, 0, len(r.pushFactories))
+	for name := range r.pushFactories {
+		providers = append(providers, name)
+	}
+	return providers
 }

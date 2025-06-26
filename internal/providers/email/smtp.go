@@ -10,13 +10,14 @@ import (
 	"strings"
 
 	"gitlab.smartbet.am/golang/notification/ent"
+	"gitlab.smartbet.am/golang/notification/ent/schema"
 	"gitlab.smartbet.am/golang/notification/internal/logger"
 	"gitlab.smartbet.am/golang/notification/internal/models"
 )
 
 // SMTPProvider implements the EmailProvider interface for SMTP
 type SMTPProvider struct {
-	config models.SMTPConfig
+	config schema.SMTPConfig
 }
 
 // NewSMTPProvider creates a new SMTP provider
@@ -26,7 +27,7 @@ func NewSMTPProvider(config map[string]interface{}) (*SMTPProvider, error) {
 		return nil, fmt.Errorf("failed to marshal SMTP config: %w", err)
 	}
 
-	var smtpConfig models.SMTPConfig
+	var smtpConfig schema.SMTPConfig
 	if err := json.Unmarshal(configBytes, &smtpConfig); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal SMTP config: %w", err)
 	}
@@ -47,8 +48,8 @@ func (s *SMTPProvider) Send(ctx context.Context, notification *ent.Notification,
 	log := logger.WithRequest(notification.RequestID)
 
 	// Get appropriate from address and name based on message type
-	fromAddr := s.config.GetFromAddress(messageType)
-	fromName := s.config.GetFromName(messageType)
+	fromAddr := s.getFromAddress(messageType)
+	fromName := s.getFromName(messageType)
 
 	// Override with notification's from if provided
 	if notification.From != "" {
@@ -129,6 +130,72 @@ func (s *SMTPProvider) ValidateConfig() error {
 // GetType returns the provider type
 func (s *SMTPProvider) GetType() string {
 	return "smtp"
+}
+
+// getFromAddress returns the appropriate from address based on message type
+func (s *SMTPProvider) getFromAddress(messageType models.MessageType) string {
+	switch messageType {
+	case models.MessageTypeBonus:
+		if s.config.MSGBonusFrom != "" {
+			return s.config.MSGBonusFrom
+		}
+	case models.MessageTypePromo:
+		if s.config.MSGPromoFrom != "" {
+			return s.config.MSGPromoFrom
+		}
+	case models.MessageTypeReport:
+		if s.config.MSGReportFrom != "" {
+			return s.config.MSGReportFrom
+		}
+	case models.MessageTypeSystem:
+		if s.config.MSGSystemFrom != "" {
+			return s.config.MSGSystemFrom
+		}
+	case models.MessageTypePayment:
+		if s.config.MSGPaymentFrom != "" {
+			return s.config.MSGPaymentFrom
+		}
+	case models.MessageTypeSupport:
+		if s.config.MSGSupportFrom != "" {
+			return s.config.MSGSupportFrom
+		}
+	}
+
+	// Default to system from address
+	return s.config.MSGSystemFrom
+}
+
+// getFromName returns the appropriate from name based on message type
+func (s *SMTPProvider) getFromName(messageType models.MessageType) string {
+	switch messageType {
+	case models.MessageTypeBonus:
+		if s.config.MSGBonusFromName != "" {
+			return s.config.MSGBonusFromName
+		}
+	case models.MessageTypePromo:
+		if s.config.MSGPromoFromName != "" {
+			return s.config.MSGPromoFromName
+		}
+	case models.MessageTypeReport:
+		if s.config.MSGReportFromName != "" {
+			return s.config.MSGReportFromName
+		}
+	case models.MessageTypeSystem:
+		if s.config.MSGSystemFromName != "" {
+			return s.config.MSGSystemFromName
+		}
+	case models.MessageTypePayment:
+		if s.config.MSGPaymentFromName != "" {
+			return s.config.MSGPaymentFromName
+		}
+	case models.MessageTypeSupport:
+		if s.config.MSGSupportFromName != "" {
+			return s.config.MSGSupportFromName
+		}
+	}
+
+	// Default to system from name
+	return s.config.MSGSystemFromName
 }
 
 // buildEmailMessage constructs the email message

@@ -16,6 +16,7 @@ type Config struct {
 	Providers     ProvidersConfig     `yaml:"providers"`
 	BatchDefaults BatchDefaultsConfig `yaml:"batch_defaults"`
 	Swagger       SwaggerConfig       `yaml:"swagger"`
+	Logging       LoggingConfig       `yaml:"logging"`
 }
 
 type ServerConfig struct {
@@ -80,6 +81,12 @@ type SwaggerConfig struct {
 	Version string `yaml:"version"`
 }
 
+type LoggingConfig struct {
+	GraylogAddr string `yaml:"graylog_addr"`
+	ServiceName string `yaml:"service_name"`
+}
+
+// NewConfig creates and loads configuration
 func NewConfig() (*Config, error) {
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
@@ -127,6 +134,15 @@ func (c *Config) setDefaults() {
 	if c.Kafka.ConsumerGroup == "" {
 		c.Kafka.ConsumerGroup = "notification-engine"
 	}
+	if len(c.Kafka.Topics.Notifications) == 0 {
+		c.Kafka.Topics.Notifications = "notifications"
+	}
+	if len(c.Kafka.Topics.Events) == 0 {
+		c.Kafka.Topics.Events = "notification-events"
+	}
+	if len(c.Kafka.Topics.DeadLetter) == 0 {
+		c.Kafka.Topics.DeadLetter = "notifications-dlq"
+	}
 	if c.BatchDefaults.MaxBatchSize == 0 {
 		c.BatchDefaults.MaxBatchSize = 100
 	}
@@ -148,6 +164,12 @@ func (c *Config) setDefaults() {
 	if c.Swagger.Host == "" {
 		c.Swagger.Host = "localhost:8080"
 	}
+	if c.Logging.ServiceName == "" {
+		c.Logging.ServiceName = "notification-engine"
+	}
+	if c.Logging.GraylogAddr == "" {
+		c.Logging.GraylogAddr = "localhost:12201"
+	}
 }
 
 func (c *Config) overrideWithEnv() {
@@ -162,6 +184,9 @@ func (c *Config) overrideWithEnv() {
 	}
 	if kafkaBrokers := os.Getenv("KAFKA_BROKERS"); kafkaBrokers != "" {
 		c.Kafka.Brokers = strings.Split(kafkaBrokers, ",")
+	}
+	if graylogAddr := os.Getenv("GRAYLOG_ADDR"); graylogAddr != "" {
+		c.Logging.GraylogAddr = graylogAddr
 	}
 }
 

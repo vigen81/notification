@@ -122,3 +122,10 @@ prod-build: ## Build for production
 deploy: prod-build docker-build ## Deploy to production (customize as needed)
 	@echo "Deploying to production..."
 	# Add your deployment commands here
+
+seed: ## Seed database with test data
+	go run ./cmd/seed
+
+seed-fresh: ## Reset and seed database with fresh test data
+	make migrate
+	make seed
