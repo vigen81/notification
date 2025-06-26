@@ -53,6 +53,8 @@ func NewEntClient(db *sql.DB, logger *logrus.Logger) (*ent.Client, error) {
 	}
 
 	Database = client
-	logger.Info("Database connection established and schema created")
+	if logger != nil {
+		logger.Info("Database connection established and schema created")
+	}
 	return client, nil
 }

@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"database/sql"
 
-	"gitlab.smartbet.am/golang/notification/internal/app"
+	"github.com/sirupsen/logrus"
+	"gitlab.smartbet.am/golang/notification/ent"
 	"gitlab.smartbet.am/golang/notification/internal/config"
 	"gitlab.smartbet.am/golang/notification/internal/db"
 	"gitlab.smartbet.am/golang/notification/internal/handlers"
@@ -14,6 +16,9 @@ import (
 	"gitlab.smartbet.am/golang/notification/internal/server"
 	"gitlab.smartbet.am/golang/notification/internal/services"
 	"gitlab.smartbet.am/golang/notification/internal/workers"
+
+	// Import generated docs for Swagger
+	_ "gitlab.smartbet.am/golang/notification/docs"
 
 	"go.uber.org/fx"
 )
@@ -39,60 +44,161 @@ import (
 // @description Type "Bearer" followed by a space and JWT token.
 
 func main() {
-	app := fx.New(
+	fx.New(
 		// Configuration
-		fx.Provide(config.NewConfig),
-		fx.Provide(logger.NewLogger),
+		fx.Provide(func() (*config.Config, error) {
+			return config.NewConfig()
+		}),
+		fx.Provide(func() *logrus.Logger {
+			return logger.NewLogger()
+		}),
 
 		// Database
-		fx.Provide(db.NewDatabase),
-		fx.Provide(db.NewEntClient),
+		fx.Provide(func(cfg *config.Config) (*sql.DB, error) {
+			return db.NewDatabase(cfg)
+		}),
+		fx.Provide(func(database *sql.DB, logger *logrus.Logger) (*ent.Client, error) {
+			return db.NewEntClient(database, logger)
+		}),
 
 		// Kafka
-		fx.Provide(kafka.NewKafkaConfig),
-		fx.Provide(kafka.NewPublisher),
-		fx.Provide(kafka.NewSubscriber),
+		fx.Provide(func(cfg *config.Config) *kafka.KafkaConfig {
+			return kafka.NewKafkaConfig(cfg)
+		}),
+		fx.Provide(func(cfg *config.Config) (*kafka.Publisher, error) {
+			return kafka.NewPublisher(cfg)
+		}),
+		fx.Provide(func(cfg *config.Config) (*kafka.Subscriber, error) {
+			return kafka.NewSubscriber(cfg)
+		}),
 
 		// Repositories
-		fx.Provide(repository.NewNotificationRepository),
-		fx.Provide(repository.NewPartnerConfigRepository),
+		fx.Provide(func(client *ent.Client, logger *logrus.Logger) *repository.NotificationRepository {
+			return repository.NewNotificationRepository(client, logger)
+		}),
+		fx.Provide(func(client *ent.Client, logger *logrus.Logger) *repository.PartnerConfigRepository {
+			return repository.NewPartnerConfigRepository(client, logger)
+		}),
 
 		// Provider System
-		fx.Provide(providers.NewProviderRegistry),
-		fx.Provide(providers.NewEmailProviderManager),
-		fx.Provide(providers.NewSMSProviderManager),
+		fx.Provide(func() *providers.ProviderRegistry {
+			return providers.NewProviderRegistry()
+		}),
+		fx.Provide(func(registry *providers.ProviderRegistry, configRepo *repository.PartnerConfigRepository, logger *logrus.Logger) *providers.EmailProviderManager {
+			return providers.NewEmailProviderManager(registry, configRepo, logger)
+		}),
+		fx.Provide(func(registry *providers.ProviderRegistry, configRepo *repository.PartnerConfigRepository, logger *logrus.Logger) *providers.SMSProviderManager {
+			return providers.NewSMSProviderManager(registry, configRepo, logger)
+		}),
 
 		// Services
-		fx.Provide(services.NewNotificationService),
-		fx.Provide(services.NewBatchService),
+		fx.Provide(func(
+			notifRepo *repository.NotificationRepository,
+			configRepo *repository.PartnerConfigRepository,
+			emailManager *providers.EmailProviderManager,
+			smsManager *providers.SMSProviderManager,
+			logger *logrus.Logger,
+		) *services.NotificationService {
+			return services.NewNotificationService(notifRepo, configRepo, emailManager, smsManager, logger)
+		}),
+		fx.Provide(func(
+			notificationSvc *services.NotificationService,
+			configRepo *repository.PartnerConfigRepository,
+			logger *logrus.Logger,
+		) *services.BatchService {
+			return services.NewBatchService(notificationSvc, configRepo, logger)
+		}),
 
 		// Handlers
-		fx.Provide(handlers.NewNotificationHandler),
-		fx.Provide(handlers.NewConfigHandler),
-		fx.Provide(handlers.NewHealthHandler),
+		fx.Provide(func(
+			publisher *kafka.Publisher,
+			notifRepo *repository.NotificationRepository,
+			logger *logrus.Logger,
+		) *handlers.NotificationHandler {
+			return handlers.NewNotificationHandler(publisher, notifRepo, logger)
+		}),
+		fx.Provide(func(configRepo *repository.PartnerConfigRepository, logger *logrus.Logger) *handlers.ConfigHandler {
+			return handlers.NewConfigHandler(configRepo, logger)
+		}),
+		fx.Provide(func(logger *logrus.Logger) *handlers.HealthHandler {
+			return handlers.NewHealthHandler(logger)
+		}),
 
 		// Workers
-		fx.Provide(workers.NewNotificationWorker),
-		fx.Provide(workers.NewSchedulerWorker),
+		fx.Provide(func(
+			subscriber *kafka.Subscriber,
+			notifRepo *repository.NotificationRepository,
+			notificationSvc *services.NotificationService,
+			batchSvc *services.BatchService,
+			logger *logrus.Logger,
+		) *workers.NotificationWorker {
+			return workers.NewNotificationWorker(subscriber, notifRepo, notificationSvc, batchSvc, logger)
+		}),
+		fx.Provide(func(
+			notifRepo *repository.NotificationRepository,
+			notificationSvc *services.NotificationService,
+			logger *logrus.Logger,
+		) *workers.SchedulerWorker {
+			return workers.NewSchedulerWorker(notifRepo, notificationSvc, logger)
+		}),
 
 		// Server
-		fx.Provide(server.NewFiberServer),
-
-		// Application
-		fx.Provide(app.NewApplication),
+		fx.Provide(func(
+			cfg *config.Config,
+			notifHandler *handlers.NotificationHandler,
+			configHandler *handlers.ConfigHandler,
+			healthHandler *handlers.HealthHandler,
+			logger *logrus.Logger,
+		) *server.FiberServer {
+			return server.NewFiberServer(cfg, notifHandler, configHandler, healthHandler, logger)
+		}),
 
 		// Lifecycle
-		fx.Invoke(func(lifecycle fx.Lifecycle, app *app.Application) {
+		fx.Invoke(func(
+			lifecycle fx.Lifecycle,
+			fiberServer *server.FiberServer,
+			notificationWorker *workers.NotificationWorker,
+			schedulerWorker *workers.SchedulerWorker,
+			logger *logrus.Logger,
+		) {
 			lifecycle.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
-					return app.Start(ctx)
+					logger.Info("Starting notification engine application")
+
+					// Start workers
+					if err := notificationWorker.Start(ctx); err != nil {
+						return err
+					}
+					if err := schedulerWorker.Start(ctx); err != nil {
+						return err
+					}
+
+					// Start HTTP server in goroutine
+					go func() {
+						if err := fiberServer.Start(":8080"); err != nil {
+							logger.WithError(err).Fatal("Failed to start server")
+						}
+					}()
+
+					logger.Info("Notification engine started successfully")
+					return nil
 				},
 				OnStop: func(ctx context.Context) error {
-					return app.Stop(ctx)
+					logger.Info("Stopping notification engine application")
+
+					// Shutdown server
+					if err := fiberServer.Shutdown(ctx); err != nil {
+						logger.WithError(err).Error("Error shutting down server")
+					}
+
+					// Stop workers
+					notificationWorker.Stop()
+					schedulerWorker.Stop()
+
+					logger.Info("Notification engine stopped")
+					return nil
 				},
 			})
 		}),
-	)
-
-	app.Run()
+	).Run()
 }

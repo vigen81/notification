@@ -1,387 +1,747 @@
-openapi: 3.0.0
+basePath: /api/v1
+definitions:
+  models.AddProviderRequest:
+    properties:
+      config:
+        additionalProperties: true
+        type: object
+      enabled:
+        example: true
+        type: boolean
+      name:
+        example: secondary
+        type: string
+      priority:
+        example: 2
+        type: integer
+      type:
+        example: sendx
+        type: string
+    type: object
+  models.Attachment:
+    properties:
+      content:
+        example: base64_encoded_content
+        type: string
+      disposition:
+        example: attachment
+        type: string
+      filename:
+        example: document.pdf
+        type: string
+      type:
+        example: application/pdf
+        type: string
+    type: object
+  models.BatchNotificationRequest:
+    properties:
+      body:
+        example: Hello! This is a batch notification.
+        type: string
+      data:
+        additionalProperties: true
+        type: object
+      from:
+        example: noreply@example.com
+        type: string
+      headline:
+        example: Batch Notification
+        type: string
+      message_type:
+        allOf:
+        - $ref: '#/definitions/models.MessageType'
+        enum:
+        - bonus
+        - promo
+        - report
+        - system
+        - payment
+        - support
+        example: promo
+      recipients:
+        example:
+        - user1@example.com
+        - user2@example.com
+        items:
+          type: string
+        type: array
+      reply_to:
+        example: support@example.com
+        type: string
+      schedule_ts:
+        example: 1640995200
+        type: integer
+      tag:
+        example: batch
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/models.NotificationType'
+        enum:
+        - EMAIL
+        - SMS
+        - PUSH
+        example: EMAIL
+    type: object
+  models.BatchNotificationResponse:
+    properties:
+      batch_id:
+        example: batch_123
+        type: string
+      queued_recipients:
+        example: 100
+        type: integer
+      status:
+        example: processing
+        type: string
+      total_recipients:
+        example: 100
+        type: integer
+    type: object
+  models.KafkaNotificationRequest:
+    properties:
+      body:
+        example: Direct Kafka notification
+        type: string
+      data:
+        additionalProperties: true
+        type: object
+      headline:
+        example: Kafka Notification
+        type: string
+      message_type:
+        allOf:
+        - $ref: '#/definitions/models.MessageType'
+        enum:
+        - bonus
+        - promo
+        - report
+        - system
+        - payment
+        - support
+        example: system
+      recipients:
+        example:
+        - user@example.com
+        items:
+          type: string
+        type: array
+      tenant_id:
+        example: 123
+        type: integer
+      type:
+        allOf:
+        - $ref: '#/definitions/models.NotificationType'
+        enum:
+        - EMAIL
+        - SMS
+        - PUSH
+        example: EMAIL
+    type: object
+  models.KafkaResponse:
+    properties:
+      request_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      status:
+        example: published
+        type: string
+    type: object
+  models.MessageType:
+    enum:
+    - bonus
+    - promo
+    - report
+    - system
+    - payment
+    - support
+    type: string
+    x-enum-varnames:
+    - MessageTypeBonus
+    - MessageTypePromo
+    - MessageTypeReport
+    - MessageTypeSystem
+    - MessageTypePayment
+    - MessageTypeSupport
+  models.NotificationRequest:
+    type: object
+  models.NotificationResponse:
+    properties:
+      message:
+        example: Notification queued for processing
+        type: string
+      request_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      status:
+        example: queued
+        type: string
+    type: object
+  models.NotificationStatusResponse:
+    properties:
+      created_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      error_message:
+        example: SMTP connection failed
+        type: string
+      request_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      schedule_ts:
+        example: 1640995200
+        type: integer
+      status:
+        example: COMPLETED
+        type: string
+      type:
+        example: EMAIL
+        type: string
+      updated_at:
+        example: "2023-01-01T00:01:00Z"
+        type: string
+    type: object
+  models.NotificationType:
+    enum:
+    - EMAIL
+    - SMS
+    - PUSH
+    type: string
+    x-enum-varnames:
+    - TypeEmail
+    - TypeSMS
+    - TypePush
+  models.PartnerConfig:
+    properties:
+      batch_config:
+        $ref: '#/definitions/schema.BatchConfig'
+      created_at:
+        type: string
+      email_providers:
+        items:
+          $ref: '#/definitions/schema.ProviderConfig'
+        type: array
+      enabled:
+        example: true
+        type: boolean
+      id:
+        type: string
+      push_providers:
+        items:
+          $ref: '#/definitions/schema.ProviderConfig'
+        type: array
+      rate_limits:
+        additionalProperties:
+          $ref: '#/definitions/schema.RateLimit'
+        type: object
+      sms_providers:
+        items:
+          $ref: '#/definitions/schema.ProviderConfig'
+        type: array
+      tenant_id:
+        example: 123
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  models.PartnerConfigRequest:
+    properties:
+      batch_config:
+        $ref: '#/definitions/schema.BatchConfig'
+      email_providers:
+        items:
+          $ref: '#/definitions/schema.ProviderConfig'
+        type: array
+      enabled:
+        example: true
+        type: boolean
+      push_providers:
+        items:
+          $ref: '#/definitions/schema.ProviderConfig'
+        type: array
+      rate_limits:
+        additionalProperties:
+          $ref: '#/definitions/schema.RateLimit'
+        type: object
+      sms_providers:
+        items:
+          $ref: '#/definitions/schema.ProviderConfig'
+        type: array
+    type: object
+  schema.BatchConfig:
+    properties:
+      enabled:
+        type: boolean
+      flush_interval_seconds:
+        type: integer
+      max_batch_size:
+        type: integer
+    type: object
+  schema.ProviderConfig:
+    properties:
+      config:
+        additionalProperties: true
+        type: object
+      enabled:
+        type: boolean
+      name:
+        type: string
+      priority:
+        type: integer
+      type:
+        type: string
+    type: object
+  schema.RateLimit:
+    properties:
+      limit:
+        type: integer
+      strategy:
+        type: string
+      window:
+        type: string
+    type: object
+host: localhost:8080
 info:
-  title: Notification Engine API
-  description: Multi-tenant notification engine supporting Email, SMS, and Push notifications
-  version: 1.0.0
   contact:
+    email: support@swagger.io
     name: API Support
     url: http://www.swagger.io/support
-    email: support@swagger.io
+  description: Multi-tenant notification engine supporting Email, SMS, and Push notifications
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-
-servers:
-  - url: http://localhost:8080/api/v1
-    description: Development server
-
-security:
-  - BearerAuth: []
-
+  termsOfService: http://swagger.io/terms/
+  title: Notification Engine API
+  version: "1.0"
 paths:
-  /notifications/send:
-    post:
-      tags:
-        - notifications
-      summary: Send a notification
-      description: Send a single notification via HTTP API
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NotificationRequest'
-      responses:
-        '202':
-          description: Notification queued successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NotificationResponse'
-        '400':
-          description: Bad request
-        '401':
-          description: Unauthorized
-        '500':
-          description: Internal server error
-
-  /notifications/batch:
-    post:
-      tags:
-        - notifications
-      summary: Send batch notifications
-      description: Send multiple notifications in a batch
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BatchNotificationRequest'
-      responses:
-        '202':
-          description: Batch notifications queued successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BatchNotificationResponse'
-
-  /notifications/status/{request_id}:
-    get:
-      tags:
-        - notifications
-      summary: Get notification status
-      description: Get the status of a notification by request ID
-      parameters:
-        - name: request_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Notification status retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NotificationStatusResponse'
-
   /config:
     get:
-      tags:
-        - configuration
-      summary: Get partner configuration
       description: Get the configuration for the authenticated tenant
+      produces:
+      - application/json
       responses:
-        '200':
-          description: Configuration retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PartnerConfig'
-    put:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PartnerConfig'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get partner configuration
       tags:
-        - configuration
-      summary: Update partner configuration
+      - configuration
+    put:
+      consumes:
+      - application/json
       description: Update the configuration for the authenticated tenant
-      requestBody:
+      parameters:
+      - description: Configuration update request
+        in: body
+        name: config
         required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PartnerConfigRequest'
+        schema:
+          $ref: '#/definitions/models.PartnerConfigRequest'
+      produces:
+      - application/json
       responses:
-        '200':
-          description: Configuration updated successfully
-
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update partner configuration
+      tags:
+      - configuration
+  /config/providers/{type}/{name}:
+    delete:
+      description: Remove a provider from the tenant configuration
+      parameters:
+      - description: Provider type (email, sms, push)
+        in: path
+        name: type
+        required: true
+        type: string
+      - description: Provider name
+        in: path
+        name: name
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Remove provider
+      tags:
+      - configuration
   /config/providers/email:
     post:
-      tags:
-        - configuration
-      summary: Add email provider
+      consumes:
+      - application/json
       description: Add a new email provider to the tenant configuration
-      requestBody:
+      parameters:
+      - description: Email provider request
+        in: body
+        name: provider
         required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AddProviderRequest'
+        schema:
+          $ref: '#/definitions/models.AddProviderRequest'
+      produces:
+      - application/json
       responses:
-        '201':
-          description: Email provider added successfully
-
-  /kafka/publish:
-    post:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add email provider
       tags:
-        - kafka
-      summary: Publish to Kafka
-      description: Directly publish a notification to Kafka
-      requestBody:
+      - configuration
+  /config/providers/push:
+    post:
+      consumes:
+      - application/json
+      description: Add a new push provider to the tenant configuration
+      parameters:
+      - description: Push provider request
+        in: body
+        name: provider
         required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/KafkaNotificationRequest'
+        schema:
+          $ref: '#/definitions/models.AddProviderRequest'
+      produces:
+      - application/json
       responses:
-        '200':
-          description: Message published to Kafka successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/KafkaResponse'
-
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add push provider
+      tags:
+      - configuration
+  /config/providers/sms:
+    post:
+      consumes:
+      - application/json
+      description: Add a new SMS provider to the tenant configuration
+      parameters:
+      - description: SMS provider request
+        in: body
+        name: provider
+        required: true
+        schema:
+          $ref: '#/definitions/models.AddProviderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add SMS provider
+      tags:
+      - configuration
   /health:
     get:
-      tags:
-        - health
-      summary: Health check
       description: Returns the health status of the notification engine
-      security: []
+      produces:
+      - application/json
       responses:
-        '200':
-          description: Service is healthy
-
-components:
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-
-  schemas:
-    NotificationRequest:
-      type: object
-      required:
-        - type
-        - recipients
-        - body
-      properties:
-        request_id:
-          type: string
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        tenant_id:
-          type: integer
-          format: int64
-          example: 123
-        type:
-          type: string
-          enum: [EMAIL, SMS, PUSH]
-          example: EMAIL
-        recipients:
-          type: array
-          items:
-            type: string
-          example: ["user@example.com", "+1234567890"]
-        body:
-          type: string
-          example: "Hello World! This is your notification."
-        headline:
-          type: string
-          example: "Important Notification"
-        from:
-          type: string
-          example: "noreply@example.com"
-        reply_to:
-          type: string
-          example: "support@example.com"
-        tag:
-          type: string
-          example: "marketing"
-        schedule_ts:
-          type: integer
-          format: int64
-          example: 1640995200
-        message_type:
-          type: string
-          enum: [bonus, promo, report, system, payment, support]
-          example: bonus
-        data:
-          type: object
-
-    NotificationResponse:
-      type: object
-      properties:
-        request_id:
-          type: string
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        status:
-          type: string
-          example: "queued"
-        message:
-          type: string
-          example: "Notification queued for processing"
-
-    BatchNotificationRequest:
-      type: object
-      required:
-        - type
-        - recipients
-        - body
-      properties:
-        type:
-          type: string
-          enum: [EMAIL, SMS, PUSH]
-        recipients:
-          type: array
-          items:
-            type: string
-        body:
-          type: string
-        headline:
-          type: string
-        message_type:
-          type: string
-          enum: [bonus, promo, report, system, payment, support]
-
-    BatchNotificationResponse:
-      type: object
-      properties:
-        batch_id:
-          type: string
-        total_recipients:
-          type: integer
-        queued_recipients:
-          type: integer
-        status:
-          type: string
-
-    NotificationStatusResponse:
-      type: object
-      properties:
-        request_id:
-          type: string
-        status:
-          type: string
-        type:
-          type: string
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        error_message:
-          type: string
-        schedule_ts:
-          type: integer
-          format: int64
-
-    PartnerConfig:
-      type: object
-      properties:
-        tenant_id:
-          type: integer
-          format: int64
-        email_providers:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProviderConfig'
-        sms_providers:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProviderConfig'
-        batch_config:
-          $ref: '#/components/schemas/BatchConfig'
-
-    ProviderConfig:
-      type: object
-      properties:
-        name:
-          type: string
-        type:
-          type: string
-        priority:
-          type: integer
-        enabled:
-          type: boolean
-        config:
-          type: object
-
-    BatchConfig:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-        max_batch_size:
-          type: integer
-        flush_interval_seconds:
-          type: integer
-
-    PartnerConfigRequest:
-      type: object
-      properties:
-        email_providers:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProviderConfig'
-
-    AddProviderRequest:
-      type: object
-      required:
-        - name
-        - type
-        - config
-      properties:
-        name:
-          type: string
-        type:
-          type: string
-        priority:
-          type: integer
-        enabled:
-          type: boolean
-        config:
-          type: object
-
-    KafkaNotificationRequest:
-      type: object
-      required:
-        - tenant_id
-        - type
-        - recipients
-        - body
-      properties:
-        tenant_id:
-          type: integer
-          format: int64
-        type:
-          type: string
-          enum: [EMAIL, SMS, PUSH]
-        recipients:
-          type: array
-          items:
-            type: string
-        body:
-          type: string
-        headline:
-          type: string
-        message_type:
-          type: string
-          enum: [bonus, promo, report, system, payment, support]
-
-    KafkaResponse:
-      type: object
-      properties:
-        request_id:
-          type: string
-        status:
-          type: string
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Health check
+      tags:
+      - health
+  /kafka/publish:
+    post:
+      consumes:
+      - application/json
+      description: Directly publish a notification to Kafka
+      parameters:
+      - description: Kafka notification request
+        in: body
+        name: notification
+        required: true
+        schema:
+          $ref: '#/definitions/models.KafkaNotificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.KafkaResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Publish to Kafka
+      tags:
+      - kafka
+  /live:
+    get:
+      description: Returns the liveness status of the notification engine
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Liveness check
+      tags:
+      - health
+  /notifications/batch:
+    post:
+      consumes:
+      - application/json
+      description: Send multiple notifications in a batch
+      parameters:
+      - description: Batch notification request
+        in: body
+        name: batch
+        required: true
+        schema:
+          $ref: '#/definitions/models.BatchNotificationRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/models.BatchNotificationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Send batch notifications
+      tags:
+      - notifications
+  /notifications/send:
+    post:
+      consumes:
+      - application/json
+      description: Send a single notification via HTTP API
+      parameters:
+      - description: Notification request
+        in: body
+        name: notification
+        required: true
+        schema:
+          $ref: '#/definitions/models.NotificationRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/models.NotificationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Send a notification
+      tags:
+      - notifications
+  /notifications/status/{request_id}:
+    get:
+      description: Get the status of a notification by request ID
+      parameters:
+      - description: Request ID
+        in: path
+        name: request_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.NotificationStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get notification status
+      tags:
+      - notifications
+  /ready:
+    get:
+      description: Returns the readiness status of the notification engine
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Readiness check
+      tags:
+      - health
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
