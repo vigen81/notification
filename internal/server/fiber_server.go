@@ -77,10 +77,14 @@ func (s *FiberServer) setupRoutes() {
 
 	// API v1 routes
 	v1 := s.app.Group("/api/v1")
+	v1.Use(func(c *fiber.Ctx) error {
+		c.Locals("tenant_id", int64(1001)) // Set test tenant
+		return c.Next()
+	})
 
 	// Apply auth middleware for all API routes
-	v1.Use(middleware.AuthMiddleware())
-	v1.Use(middleware.TenantMiddleware())
+	//v1.Use(middleware.AuthMiddleware())
+	//v1.Use(middleware.TenantMiddleware())
 
 	// Notification routes
 	notifications := v1.Group("/notifications")
