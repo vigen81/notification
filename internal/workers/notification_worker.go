@@ -81,6 +81,8 @@ func (w *NotificationWorker) processMessages(ctx context.Context, messages <-cha
 				}).Info("Message processed successfully")
 				msg.Ack()
 			}
+		default:
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
 }

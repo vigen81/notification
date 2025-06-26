@@ -165,11 +165,12 @@ func main() {
 				OnStart: func(ctx context.Context) error {
 					logger.Info("Starting notification engine application")
 
+					workerCtx := context.Background()
 					// Start workers
-					if err := notificationWorker.Start(ctx); err != nil {
+					if err := notificationWorker.Start(workerCtx); err != nil {
 						return err
 					}
-					if err := schedulerWorker.Start(ctx); err != nil {
+					if err := schedulerWorker.Start(workerCtx); err != nil {
 						return err
 					}
 
