@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"strconv"
 	"strings"
 	"time"
 
@@ -9,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// AuthMiddleware validates JWT tokens for API authentication
+// AuthMiddleware validates JWT tokens for global API authentication
 func AuthMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Get token from header
@@ -43,15 +42,16 @@ func AuthMiddleware() fiber.Handler {
 			})
 		}
 
-		// Extract claims
+		// Extract user information from claims (no tenant restriction)
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			if userID, exists := claims["user_id"]; exists {
 				c.Locals("user_id", userID)
 			}
-			if tenantID, exists := claims["tenant_id"]; exists {
-				if tid, ok := tenantID.(float64); ok {
-					c.Locals("tenant_id", int64(tid))
-				}
+			if username, exists := claims["username"]; exists {
+				c.Locals("username", username)
+			}
+			if role, exists := claims["role"]; exists {
+				c.Locals("user_role", role)
 			}
 		}
 
@@ -59,33 +59,18 @@ func AuthMiddleware() fiber.Handler {
 	}
 }
 
-// TenantMiddleware ensures tenant ID is present
-func TenantMiddleware() fiber.Handler {
+// TenantParameterMiddleware extracts tenant_id from request parameters or body
+func TenantParameterMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// Check if tenant_id is already set by auth
-		if c.Locals("tenant_id") != nil {
+		// For routes like /config/:tenant_id, /notifications/send/:tenant_id
+		tenantParam := c.Params("tenant_id")
+		if tenantParam != "" {
+			c.Locals("target_tenant_id", tenantParam)
 			return c.Next()
 		}
 
-		// Try to get from header as fallback
-		tenantHeader := c.Get("X-Tenant-ID")
-		if tenantHeader == "" {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Missing tenant ID",
-				"code":  "MISSING_TENANT",
-			})
-		}
-
-		// Convert to int64
-		tenantID, err := strconv.ParseInt(tenantHeader, 10, 64)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Invalid tenant ID",
-				"code":  "INVALID_TENANT",
-			})
-		}
-
-		c.Locals("tenant_id", tenantID)
+		// For JSON body requests, tenant_id should be in the request body
+		// This will be handled in the handlers when parsing the request
 		return c.Next()
 	}
 }
@@ -118,7 +103,7 @@ func KafkaAuthMiddleware() fiber.Handler {
 // RateLimitMiddleware provides rate limiting (placeholder implementation)
 func RateLimitMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// TODO: Implement rate limiting based on tenant configuration
+		// TODO: Implement global rate limiting
 		// For now, just pass through
 		return c.Next()
 	}

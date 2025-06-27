@@ -1,3 +1,5 @@
+// File: internal/handlers/notification_handler.go
+
 package handlers
 
 import (
@@ -53,15 +55,13 @@ func (h *NotificationHandler) SendNotification(c *fiber.Ctx) error {
 		})
 	}
 
-	// Get tenant ID from context (set by auth middleware)
-	tenantID, ok := c.Locals("tenant_id").(int64)
-	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid tenant",
-			"code":  "INVALID_TENANT",
+	// Tenant ID must be provided in the request body
+	if req.TenantID == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Tenant ID is required in request body",
+			"code":  "MISSING_TENANT_ID",
 		})
 	}
-	req.TenantID = tenantID
 
 	// Generate request ID if not provided
 	if req.RequestID == "" {
@@ -80,7 +80,7 @@ func (h *NotificationHandler) SendNotification(c *fiber.Ctx) error {
 	data, err := json.Marshal(req)
 	if err != nil {
 		logger.WithRequest(req.RequestID).Error("Failed to marshal notification request", err, map[string]interface{}{
-			"tenant_id": tenantID,
+			"tenant_id": req.TenantID,
 		})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Internal server error",
@@ -90,7 +90,7 @@ func (h *NotificationHandler) SendNotification(c *fiber.Ctx) error {
 
 	if err := h.publisher.Publish(context.Background(), "notifications", req.RequestID, data); err != nil {
 		logger.WithRequest(req.RequestID).Error("Failed to publish to Kafka", err, map[string]interface{}{
-			"tenant_id": tenantID,
+			"tenant_id": req.TenantID,
 		})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to queue notification",
@@ -129,7 +129,14 @@ func (h *NotificationHandler) SendBatchNotification(c *fiber.Ctx) error {
 		})
 	}
 
-	tenantID, _ := c.Locals("tenant_id").(int64)
+	// Tenant ID must be provided in the request body
+	if req.TenantID == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Tenant ID is required in request body",
+			"code":  "MISSING_TENANT_ID",
+		})
+	}
+
 	batchID := uuid.New().String()
 
 	// Split recipients into chunks and publish to Kafka
@@ -144,7 +151,7 @@ func (h *NotificationHandler) SendBatchNotification(c *fiber.Ctx) error {
 
 		notifReq := models.NotificationRequest{
 			RequestID:   uuid.New().String(),
-			TenantID:    tenantID,
+			TenantID:    req.TenantID,
 			Type:        req.Type,
 			Recipients:  req.Recipients[i:end],
 			Body:        req.Body,
@@ -162,7 +169,7 @@ func (h *NotificationHandler) SendBatchNotification(c *fiber.Ctx) error {
 		if err := h.publisher.Publish(context.Background(), "notifications", notifReq.RequestID, data); err != nil {
 			logger.WithRequest(notifReq.RequestID).Error("Failed to publish batch request", err, map[string]interface{}{
 				"batch_id":  batchID,
-				"tenant_id": tenantID,
+				"tenant_id": req.TenantID,
 			})
 		} else {
 			publishedCount += len(notifReq.Recipients)
@@ -188,7 +195,6 @@ func (h *NotificationHandler) SendBatchNotification(c *fiber.Ctx) error {
 // @Success 200 {object} models.NotificationStatusResponse
 // @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
-// @Failure 403 {object} map[string]interface{}
 // @Security BearerAuth
 // @Router /notifications/status/{request_id} [get]
 func (h *NotificationHandler) GetNotificationStatus(c *fiber.Ctx) error {
@@ -200,8 +206,7 @@ func (h *NotificationHandler) GetNotificationStatus(c *fiber.Ctx) error {
 		})
 	}
 
-	tenantID, _ := c.Locals("tenant_id").(int64)
-
+	// Try to find by direct request_id
 	notification, err := h.notifRepo.GetByRequestID(context.Background(), requestID)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -210,18 +215,11 @@ func (h *NotificationHandler) GetNotificationStatus(c *fiber.Ctx) error {
 		})
 	}
 
-	// Verify tenant ownership
-	if notification.TenantID != tenantID {
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "Access denied",
-			"code":  "ACCESS_DENIED",
-		})
-	}
-
 	response := models.NotificationStatusResponse{
 		RequestID: notification.RequestID,
 		Status:    string(notification.Status),
 		Type:      string(notification.Type),
+		TenantID:  notification.TenantID,
 		CreatedAt: notification.CreateTime,
 		UpdatedAt: notification.UpdateTime,
 	}
@@ -232,6 +230,77 @@ func (h *NotificationHandler) GetNotificationStatus(c *fiber.Ctx) error {
 
 	if notification.ScheduleTs != nil {
 		response.ScheduleTS = notification.ScheduleTs
+	}
+
+	return c.JSON(response)
+}
+
+// GetBatchStatus retrieves batch status by batch ID
+// @Summary Get batch status
+// @Description Get the status of a batch by batch ID
+// @Tags notifications
+// @Produce json
+// @Param batch_id path string true "Batch ID"
+// @Success 200 {object} models.BatchNotificationStatusResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /notifications/batch/{batch_id}/status [get]
+func (h *NotificationHandler) GetBatchStatus(c *fiber.Ctx) error {
+	batchID := c.Params("batch_id")
+	if batchID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Batch ID is required",
+			"code":  "MISSING_BATCH_ID",
+		})
+	}
+
+	notifications, err := h.notifRepo.GetByBatchID(context.Background(), batchID)
+	if err != nil || len(notifications) == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Batch not found",
+			"code":  "NOT_FOUND",
+		})
+	}
+
+	// Calculate batch status
+	var completed, failed, pending int
+	firstNotification := notifications[0]
+
+	for _, notif := range notifications {
+		switch notif.Status {
+		case "COMPLETED":
+			completed++
+		case "FAILED":
+			failed++
+		default:
+			pending++
+		}
+	}
+
+	status := "PENDING"
+	if pending == 0 {
+		if failed > 0 {
+			status = "PARTIALLY_FAILED"
+			if completed == 0 {
+				status = "FAILED"
+			}
+		} else {
+			status = "COMPLETED"
+		}
+	}
+
+	response := models.BatchNotificationStatusResponse{
+		BatchID:        batchID,
+		Status:         status,
+		Type:           string(firstNotification.Type),
+		TenantID:       firstNotification.TenantID,
+		CreatedAt:      firstNotification.CreateTime,
+		UpdatedAt:      firstNotification.UpdateTime,
+		TotalCount:     len(notifications),
+		CompletedCount: completed,
+		FailedCount:    failed,
+		PendingCount:   pending,
 	}
 
 	return c.JSON(response)
@@ -256,6 +325,14 @@ func (h *NotificationHandler) PublishToKafka(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
 			"code":  "INVALID_REQUEST",
+		})
+	}
+
+	// Tenant ID must be provided in the request body
+	if req.TenantID == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Tenant ID is required in request body",
+			"code":  "MISSING_TENANT_ID",
 		})
 	}
 
@@ -296,6 +373,10 @@ func (h *NotificationHandler) PublishToKafka(c *fiber.Ctx) error {
 }
 
 func (h *NotificationHandler) validateRequest(req *models.NotificationRequest) error {
+	if req.TenantID == 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "Tenant ID is required")
+	}
+
 	if len(req.Recipients) == 0 {
 		return fiber.NewError(fiber.StatusBadRequest, "Recipients list cannot be empty")
 	}

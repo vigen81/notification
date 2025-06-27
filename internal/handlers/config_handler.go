@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
@@ -22,18 +23,34 @@ func NewConfigHandler(configRepo *repository.PartnerConfigRepository, logger *lo
 	}
 }
 
-// GetConfig retrieves the configuration for a tenant
+// GetConfig retrieves the configuration for a specific tenant
 // @Summary Get partner configuration
-// @Description Get the configuration for the authenticated tenant
+// @Description Get the configuration for a specific tenant by tenant_id
 // @Tags configuration
 // @Produce json
+// @Param tenant_id path int true "Tenant ID"
 // @Success 200 {object} models.PartnerConfig
+// @Failure 400 {object} map[string]interface{}
 // @Failure 401 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
 // @Security BearerAuth
-// @Router /config [get]
+// @Router /config/{tenant_id} [get]
 func (h *ConfigHandler) GetConfig(c *fiber.Ctx) error {
-	tenantID, _ := c.Locals("tenant_id").(int64)
+	tenantIDStr := c.Params("tenant_id")
+	if tenantIDStr == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Tenant ID is required",
+			"code":  "MISSING_TENANT_ID",
+		})
+	}
+
+	tenantID, err := strconv.ParseInt(tenantIDStr, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid tenant ID",
+			"code":  "INVALID_TENANT_ID",
+		})
+	}
 
 	config, err := h.configRepo.GetByTenantID(context.Background(), tenantID)
 	if err != nil {
@@ -47,21 +64,36 @@ func (h *ConfigHandler) GetConfig(c *fiber.Ctx) error {
 	return c.JSON(config)
 }
 
-// UpdateConfig updates the configuration for a tenant
+// UpdateConfig updates the configuration for a specific tenant
 // @Summary Update partner configuration
-// @Description Update the configuration for the authenticated tenant
+// @Description Update the configuration for a specific tenant
 // @Tags configuration
 // @Accept json
 // @Produce json
+// @Param tenant_id path int true "Tenant ID"
 // @Param config body models.PartnerConfigRequest true "Configuration update request"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Failure 401 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
 // @Security BearerAuth
-// @Router /config [put]
+// @Router /config/{tenant_id} [put]
 func (h *ConfigHandler) UpdateConfig(c *fiber.Ctx) error {
-	tenantID, _ := c.Locals("tenant_id").(int64)
+	tenantIDStr := c.Params("tenant_id")
+	if tenantIDStr == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Tenant ID is required",
+			"code":  "MISSING_TENANT_ID",
+		})
+	}
+
+	tenantID, err := strconv.ParseInt(tenantIDStr, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid tenant ID",
+			"code":  "INVALID_TENANT_ID",
+		})
+	}
 
 	var req models.PartnerConfigRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -74,7 +106,7 @@ func (h *ConfigHandler) UpdateConfig(c *fiber.Ctx) error {
 	// Get existing config or create new one
 	config, err := h.configRepo.GetByTenantID(context.Background(), tenantID)
 	if err != nil {
-		// Create new config if not exists
+		// Create new config if not found
 		config = &models.PartnerConfig{
 			TenantID: tenantID,
 		}
@@ -97,26 +129,35 @@ func (h *ConfigHandler) UpdateConfig(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"message": "Configuration updated successfully",
-		"status":  "success",
+		"message":   "Configuration updated successfully",
+		"status":    "success",
+		"tenant_id": tenantID,
 	})
 }
 
-// AddEmailProvider adds a new email provider to the tenant configuration
+// AddEmailProvider adds a new email provider to a tenant configuration
 // @Summary Add email provider
-// @Description Add a new email provider to the tenant configuration
+// @Description Add a new email provider to a specific tenant configuration
 // @Tags configuration
 // @Accept json
 // @Produce json
+// @Param tenant_id path int true "Tenant ID"
 // @Param provider body models.AddProviderRequest true "Email provider request"
 // @Success 201 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Failure 401 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
 // @Security BearerAuth
-// @Router /config/providers/email [post]
+// @Router /config/{tenant_id}/providers/email [post]
 func (h *ConfigHandler) AddEmailProvider(c *fiber.Ctx) error {
-	tenantID, _ := c.Locals("tenant_id").(int64)
+	tenantIDStr := c.Params("tenant_id")
+	tenantID, err := strconv.ParseInt(tenantIDStr, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid tenant ID",
+			"code":  "INVALID_TENANT_ID",
+		})
+	}
 
 	var req models.AddProviderRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -154,26 +195,35 @@ func (h *ConfigHandler) AddEmailProvider(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "Email provider added successfully",
-		"status":  "success",
+		"message":   "Email provider added successfully",
+		"status":    "success",
+		"tenant_id": tenantID,
 	})
 }
 
-// AddSMSProvider adds a new SMS provider to the tenant configuration
+// AddSMSProvider adds a new SMS provider to a tenant configuration
 // @Summary Add SMS provider
-// @Description Add a new SMS provider to the tenant configuration
+// @Description Add a new SMS provider to a specific tenant configuration
 // @Tags configuration
 // @Accept json
 // @Produce json
+// @Param tenant_id path int true "Tenant ID"
 // @Param provider body models.AddProviderRequest true "SMS provider request"
 // @Success 201 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Failure 401 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
 // @Security BearerAuth
-// @Router /config/providers/sms [post]
+// @Router /config/{tenant_id}/providers/sms [post]
 func (h *ConfigHandler) AddSMSProvider(c *fiber.Ctx) error {
-	tenantID, _ := c.Locals("tenant_id").(int64)
+	tenantIDStr := c.Params("tenant_id")
+	tenantID, err := strconv.ParseInt(tenantIDStr, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid tenant ID",
+			"code":  "INVALID_TENANT_ID",
+		})
+	}
 
 	var req models.AddProviderRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -211,26 +261,35 @@ func (h *ConfigHandler) AddSMSProvider(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "SMS provider added successfully",
-		"status":  "success",
+		"message":   "SMS provider added successfully",
+		"status":    "success",
+		"tenant_id": tenantID,
 	})
 }
 
-// AddPushProvider adds a new push provider to the tenant configuration
+// AddPushProvider adds a new push provider to a tenant configuration
 // @Summary Add push provider
-// @Description Add a new push provider to the tenant configuration
+// @Description Add a new push provider to a specific tenant configuration
 // @Tags configuration
 // @Accept json
 // @Produce json
+// @Param tenant_id path int true "Tenant ID"
 // @Param provider body models.AddProviderRequest true "Push provider request"
 // @Success 201 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Failure 401 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
 // @Security BearerAuth
-// @Router /config/providers/push [post]
+// @Router /config/{tenant_id}/providers/push [post]
 func (h *ConfigHandler) AddPushProvider(c *fiber.Ctx) error {
-	tenantID, _ := c.Locals("tenant_id").(int64)
+	tenantIDStr := c.Params("tenant_id")
+	tenantID, err := strconv.ParseInt(tenantIDStr, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid tenant ID",
+			"code":  "INVALID_TENANT_ID",
+		})
+	}
 
 	var req models.AddProviderRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -268,15 +327,17 @@ func (h *ConfigHandler) AddPushProvider(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "Push provider added successfully",
-		"status":  "success",
+		"message":   "Push provider added successfully",
+		"status":    "success",
+		"tenant_id": tenantID,
 	})
 }
 
-// RemoveProvider removes a provider from the tenant configuration
+// RemoveProvider removes a provider from a tenant configuration
 // @Summary Remove provider
-// @Description Remove a provider from the tenant configuration
+// @Description Remove a provider from a specific tenant configuration
 // @Tags configuration
+// @Param tenant_id path int true "Tenant ID"
 // @Param type path string true "Provider type (email, sms, push)"
 // @Param name path string true "Provider name"
 // @Success 200 {object} map[string]interface{}
@@ -285,9 +346,17 @@ func (h *ConfigHandler) AddPushProvider(c *fiber.Ctx) error {
 // @Failure 404 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
 // @Security BearerAuth
-// @Router /config/providers/{type}/{name} [delete]
+// @Router /config/{tenant_id}/providers/{type}/{name} [delete]
 func (h *ConfigHandler) RemoveProvider(c *fiber.Ctx) error {
-	tenantID, _ := c.Locals("tenant_id").(int64)
+	tenantIDStr := c.Params("tenant_id")
+	tenantID, err := strconv.ParseInt(tenantIDStr, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid tenant ID",
+			"code":  "INVALID_TENANT_ID",
+		})
+	}
+
 	providerType := c.Params("type")
 	providerName := c.Params("name")
 
@@ -356,7 +425,8 @@ func (h *ConfigHandler) RemoveProvider(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"message": "Provider removed successfully",
-		"status":  "success",
+		"message":   "Provider removed successfully",
+		"status":    "success",
+		"tenant_id": tenantID,
 	})
 }
