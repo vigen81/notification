@@ -47,7 +47,7 @@ func NewFiberServer(
 	}))
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization, X-Tenant-ID, X-Kafka-API-Key",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization, X-Kafka-API-Key",
 		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
 	}))
 
@@ -75,31 +75,31 @@ func (s *FiberServer) setupRoutes() {
 		s.app.Get("/swagger/*", swagger.HandlerDefault)
 	}
 
-	// API v1 routes
+	// API v1 routes - Apply global authentication
 	v1 := s.app.Group("/api/v1")
-	v1.Use(func(c *fiber.Ctx) error {
-		c.Locals("tenant_id", int64(1001)) // Set test tenant
-		return c.Next()
-	})
+	//v1.Use(middleware.AuthMiddleware()) // Global auth - no tenant restriction
 
-	// Apply auth middleware for all API routes
-	//v1.Use(middleware.AuthMiddleware())
-	//v1.Use(middleware.TenantMiddleware())
+	// REMOVED: Test tenant middleware - no longer needed
+	// v1.Use(func(c *fiber.Ctx) error {
+	//     c.Locals("tenant_id", int64(1001)) // REMOVED - Set test tenant
+	//     return c.Next()
+	// })
 
-	// Notification routes
+	// Notification routes - tenant_id in request body
 	notifications := v1.Group("/notifications")
 	notifications.Post("/send", s.notifHandler.SendNotification)
 	notifications.Post("/batch", s.notifHandler.SendBatchNotification)
 	notifications.Get("/status/:request_id", s.notifHandler.GetNotificationStatus)
+	notifications.Get("/batch/:batch_id/status", s.notifHandler.GetBatchStatus)
 
-	// Partner configuration routes
+	// Partner configuration routes - tenant_id in URL
 	configs := v1.Group("/config")
-	configs.Get("/", s.configHandler.GetConfig)
-	configs.Put("/", s.configHandler.UpdateConfig)
-	configs.Post("/providers/email", s.configHandler.AddEmailProvider)
-	configs.Post("/providers/sms", s.configHandler.AddSMSProvider)
-	configs.Post("/providers/push", s.configHandler.AddPushProvider)
-	configs.Delete("/providers/:type/:name", s.configHandler.RemoveProvider)
+	configs.Get("/:tenant_id", s.configHandler.GetConfig)
+	configs.Put("/:tenant_id", s.configHandler.UpdateConfig)
+	configs.Post("/:tenant_id/providers/email", s.configHandler.AddEmailProvider)
+	configs.Post("/:tenant_id/providers/sms", s.configHandler.AddSMSProvider)
+	configs.Post("/:tenant_id/providers/push", s.configHandler.AddPushProvider)
+	configs.Delete("/:tenant_id/providers/:type/:name", s.configHandler.RemoveProvider)
 
 	// Kafka API endpoints (for direct Kafka publishing)
 	kafkaAPI := v1.Group("/kafka")

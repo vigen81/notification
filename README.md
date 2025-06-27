@@ -7,13 +7,14 @@ A high-performance, multi-tenant notification engine built with Go, Ent, Fiber, 
 - **Multi-tenant Architecture**: Per-partner configurations with isolated data
 - **Multiple Notification Types**: Email, SMS, and Push notifications
 - **Provider Flexibility**: Support for multiple providers per channel
-    - **Email**: SendGrid, SendX, SMTP
-    - **SMS**: Twilio, Nexmo
-    - **Push**: FCM (Firebase Cloud Messaging)
+  - **Email**: SendGrid, SendX, SMTP
+  - **SMS**: Twilio, Nexmo
+  - **Push**: FCM (Firebase Cloud Messaging)
 - **Dual API Support**: HTTP REST API and Kafka messaging
 - **Batch Processing**: Efficient batch sending with configurable thresholds
 - **Scheduled Notifications**: Support for future-dated notifications
 - **Message Type Based Routing**: Different from addresses based on message type (bonus, promo, system, etc.)
+- **Global Authentication**: Manage any tenant from a single authenticated session
 - **Comprehensive Logging**: Structured logging with Graylog integration
 - **Swagger Documentation**: Auto-generated API documentation
 - **Docker Ready**: Complete containerization with Docker Compose
@@ -120,13 +121,31 @@ Each tenant can configure multiple providers with specific settings:
 
 ## 📡 API Usage
 
+### 🔑 Authentication
+
+All API endpoints require a global JWT token that allows access to any tenant:
+
+```bash
+Authorization: Bearer YOUR_GLOBAL_TOKEN
+```
+
+The token should contain claims like:
+```json
+{
+  "user_id": "admin123",
+  "username": "admin@company.com", 
+  "role": "admin"
+}
+```
+
 ### Send Single Notification
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/notifications/send \
-  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
+    "tenant_id": 1001,
     "type": "EMAIL",
     "recipients": ["user@example.com"],
     "body": "Hello! This is your notification.",
@@ -135,17 +154,50 @@ curl -X POST http://localhost:8080/api/v1/notifications/send \
   }'
 ```
 
+### Send SMS Notification
+
+```bash
+curl -X POST http://localhost:8080/api/v1/notifications/send \
+  -H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tenant_id": 1002,
+    "type": "SMS",
+    "recipients": ["+1234567890"],
+    "body": "Your verification code is: 123456",
+    "message_type": "system"
+  }'
+```
+
 ### Send Batch Notification
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/notifications/batch \
-  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
+    "tenant_id": 1001,
     "type": "EMAIL",
     "recipients": ["user1@example.com", "user2@example.com"],
     "body": "Batch notification content",
+    "headline": "Weekly Newsletter",
     "message_type": "promo"
+  }'
+```
+
+### Send Scheduled Notification
+
+```bash
+curl -X POST http://localhost:8080/api/v1/notifications/send \
+  -H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tenant_id": 1001,
+    "type": "EMAIL",
+    "recipients": ["user@example.com"],
+    "body": "This message is scheduled for later",
+    "schedule_ts": 1640995200,
+    "message_type": "system"
   }'
 ```
 
@@ -153,21 +205,165 @@ curl -X POST http://localhost:8080/api/v1/notifications/batch \
 
 ```bash
 curl -X GET http://localhost:8080/api/v1/notifications/status/{request_id} \
-  -H "Authorization: Bearer YOUR_TOKEN"
+  -H "Authorization: Bearer YOUR_GLOBAL_TOKEN"
+```
+
+**Response includes tenant information:**
+```json
+{
+  "request_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "COMPLETED",
+  "type": "EMAIL",
+  "tenant_id": 1001,
+  "created_at": "2023-01-01T00:00:00Z",
+  "updated_at": "2023-01-01T00:01:00Z"
+}
+```
+
+### Get Tenant Configuration
+
+```bash
+# Get config for Goodwin Casino (tenant 1001)
+curl -X GET http://localhost:8080/api/v1/config/1001 \
+  -H "Authorization: Bearer YOUR_GLOBAL_TOKEN"
+
+# Get config for StarBet (tenant 1002)  
+curl -X GET http://localhost:8080/api/v1/config/1002 \
+  -H "Authorization: Bearer YOUR_GLOBAL_TOKEN"
+```
+
+### Update Tenant Configuration
+
+```bash
+curl -X PUT http://localhost:8080/api/v1/config/1001 \
+  -H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email_providers": [
+      {
+        "name": "primary",
+        "type": "smtp",
+        "priority": 1,
+        "enabled": true,
+        "config": {
+          "Host": "smtp.sendgrid.net",
+          "Port": "465",
+          "Username": "apikey",
+          "Password": "your_api_key",
+          "SMTPAuth": "1",
+          "SMTPSecure": "ssl",
+          "MSGBonusFrom": "bonus@goodwin.am",
+          "MSGPromoFrom": "noreply@goodwin.am",
+          "MSGSystemFrom": "noreply@goodwin.am"
+        }
+      }
+    ],
+    "batch_config": {
+      "enabled": true,
+      "max_batch_size": 100,
+      "flush_interval_seconds": 10
+    },
+    "enabled": true
+  }'
+```
+
+### Add Email Provider
+
+```bash
+curl -X POST http://localhost:8080/api/v1/config/1001/providers/email \
+  -H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "backup_smtp",
+    "type": "smtp",
+    "priority": 2,
+    "enabled": true,
+    "config": {
+      "Host": "smtp.backup.com",
+      "Port": "587",
+      "Username": "backup_user",
+      "Password": "backup_pass",
+      "SMTPAuth": "1",
+      "SMTPSecure": "tls"
+    }
+  }'
+```
+
+### Add SMS Provider
+
+```bash
+curl -X POST http://localhost:8080/api/v1/config/1002/providers/sms \
+  -H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "twilio_primary",
+    "type": "twilio",
+    "priority": 1,
+    "enabled": true,
+    "config": {
+      "account_sid": "AC_your_account_sid",
+      "auth_token": "your_auth_token",
+      "from_number": "+1234567890"
+    }
+  }'
+```
+
+### Remove Provider
+
+```bash
+# Remove email provider "backup_smtp" from tenant 1001
+curl -X DELETE http://localhost:8080/api/v1/config/1001/providers/email/backup_smtp \
+  -H "Authorization: Bearer YOUR_GLOBAL_TOKEN"
 ```
 
 ### Direct Kafka Publishing
 
+For high-throughput scenarios, publish directly to Kafka:
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/kafka/publish \
+  -H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
   -H "X-Kafka-API-Key: YOUR_KAFKA_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "tenant_id": 123,
+    "tenant_id": 1001,
     "type": "EMAIL",
     "recipients": ["user@example.com"],
-    "body": "Direct Kafka notification"
+    "body": "Direct Kafka notification",
+    "headline": "Kafka Test",
+    "message_type": "system"
   }'
+```
+
+### Multi-Tenant Management Examples
+
+```bash
+# Send different notifications for different tenants
+curl -X POST http://localhost:8080/api/v1/notifications/send \
+  -H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
+  -d '{"tenant_id":1001,"type":"EMAIL","recipients":["goodwin@example.com"],"body":"Welcome to Goodwin Casino!","message_type":"bonus"}'
+
+curl -X POST http://localhost:8080/api/v1/notifications/send \
+  -H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
+  -d '{"tenant_id":1002,"type":"SMS","recipients":["+1234567890"],"body":"StarBet: Your account is verified","message_type":"system"}'
+```
+
+### Message Type Based Routing
+
+The system automatically selects the appropriate "from" address based on message type:
+
+```bash
+# Bonus message - uses MSGBonusFrom
+curl -X POST http://localhost:8080/api/v1/notifications/send \
+  -d '{"tenant_id":1001,"type":"EMAIL","recipients":["user@example.com"],"body":"You got a bonus!","message_type":"bonus"}'
+
+# Promo message - uses MSGPromoFrom  
+curl -X POST http://localhost:8080/api/v1/notifications/send \
+  -d '{"tenant_id":1001,"type":"EMAIL","recipients":["user@example.com"],"body":"Special offer!","message_type":"promo"}'
+
+# System message - uses MSGSystemFrom
+curl -X POST http://localhost:8080/api/v1/notifications/send \
+  -d '{"tenant_id":1001,"type":"EMAIL","recipients":["user@example.com"],"body":"Account updated","message_type":"system"}'
 ```
 
 ## 🏗 Architecture
@@ -219,6 +415,16 @@ make docker-run        # Start with Docker Compose
 make logs              # View application logs
 ```
 
+### Testing Commands
+
+```bash
+make api-health                # Test health endpoint
+make api-send                  # Test notification sending
+make api-config-get            # Test config retrieval
+make api-test-all-tenants      # Test multiple tenants
+make api-configs-all           # Get all tenant configs
+```
+
 ### Project Structure
 
 ```
@@ -253,7 +459,7 @@ notification-engine/
 
 ## 🔒 Security
 
-- **JWT Authentication**: Bearer token authentication for HTTP API
+- **Global JWT Authentication**: Bearer token authentication for HTTP API
 - **API Key Authentication**: Additional security for Kafka endpoints
 - **Tenant Isolation**: Multi-tenant data isolation
 - **Rate Limiting**: Configurable rate limits per tenant
@@ -444,7 +650,7 @@ make docker-run
 hey -n 10000 -c 100 -m POST \
   -H "Authorization: Bearer test-token" \
   -H "Content-Type: application/json" \
-  -d '{"type":"EMAIL","recipients":["test@example.com"],"body":"Load test"}' \
+  -d '{"tenant_id":1001,"type":"EMAIL","recipients":["test@example.com"],"body":"Load test"}' \
   http://localhost:8080/api/v1/notifications/send
 ```
 
@@ -463,6 +669,14 @@ hey -n 10000 -c 100 -m POST \
 - **Discussions**: Use GitHub Discussions for questions and community support
 - **API Documentation**: Available at `/swagger/` when running
 - **Logs**: Application logs are sent to the configured Graylog endpoint
+
+## 🎯 Key Benefits of Global Auth
+
+1. **Multi-tenant Management**: Manage any tenant from one authenticated session
+2. **Admin Panel Friendly**: Perfect for admin interfaces where you select tenant
+3. **API Simplicity**: Clear separation between auth and tenant targeting
+4. **Operational Tools**: Easy to build monitoring and management tools
+5. **Flexibility**: Switch between tenants without re-authentication
 
 ---
 

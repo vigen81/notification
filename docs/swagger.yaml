@@ -74,6 +74,9 @@ definitions:
       tag:
         example: batch
         type: string
+      tenant_id:
+        example: 123
+        type: integer
       type:
         allOf:
         - $ref: '#/definitions/models.NotificationType'
@@ -194,6 +197,9 @@ definitions:
       status:
         example: COMPLETED
         type: string
+      tenant_id:
+        example: 123
+        type: integer
       type:
         example: EMAIL
         type: string
@@ -314,9 +320,15 @@ info:
   title: Notification Engine API
   version: "1.0"
 paths:
-  /config:
+  /config/{tenant_id}:
     get:
-      description: Get the configuration for the authenticated tenant
+      description: Get the configuration for a specific tenant by tenant_id
+      parameters:
+      - description: Tenant ID
+        in: path
+        name: tenant_id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -324,6 +336,11 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.PartnerConfig'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
         "401":
           description: Unauthorized
           schema:
@@ -342,8 +359,13 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update the configuration for the authenticated tenant
+      description: Update the configuration for a specific tenant
       parameters:
+      - description: Tenant ID
+        in: path
+        name: tenant_id
+        required: true
+        type: integer
       - description: Configuration update request
         in: body
         name: config
@@ -378,10 +400,15 @@ paths:
       summary: Update partner configuration
       tags:
       - configuration
-  /config/providers/{type}/{name}:
+  /config/{tenant_id}/providers/{type}/{name}:
     delete:
-      description: Remove a provider from the tenant configuration
+      description: Remove a provider from a specific tenant configuration
       parameters:
+      - description: Tenant ID
+        in: path
+        name: tenant_id
+        required: true
+        type: integer
       - description: Provider type (email, sms, push)
         in: path
         name: type
@@ -423,12 +450,17 @@ paths:
       summary: Remove provider
       tags:
       - configuration
-  /config/providers/email:
+  /config/{tenant_id}/providers/email:
     post:
       consumes:
       - application/json
-      description: Add a new email provider to the tenant configuration
+      description: Add a new email provider to a specific tenant configuration
       parameters:
+      - description: Tenant ID
+        in: path
+        name: tenant_id
+        required: true
+        type: integer
       - description: Email provider request
         in: body
         name: provider
@@ -463,12 +495,17 @@ paths:
       summary: Add email provider
       tags:
       - configuration
-  /config/providers/push:
+  /config/{tenant_id}/providers/push:
     post:
       consumes:
       - application/json
-      description: Add a new push provider to the tenant configuration
+      description: Add a new push provider to a specific tenant configuration
       parameters:
+      - description: Tenant ID
+        in: path
+        name: tenant_id
+        required: true
+        type: integer
       - description: Push provider request
         in: body
         name: provider
@@ -503,12 +540,17 @@ paths:
       summary: Add push provider
       tags:
       - configuration
-  /config/providers/sms:
+  /config/{tenant_id}/providers/sms:
     post:
       consumes:
       - application/json
-      description: Add a new SMS provider to the tenant configuration
+      description: Add a new SMS provider to a specific tenant configuration
       parameters:
+      - description: Tenant ID
+        in: path
+        name: tenant_id
+        required: true
+        type: integer
       - description: SMS provider request
         in: body
         name: provider
@@ -706,11 +748,6 @@ paths:
             $ref: '#/definitions/models.NotificationStatusResponse'
         "400":
           description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "403":
-          description: Forbidden
           schema:
             additionalProperties: true
             type: object

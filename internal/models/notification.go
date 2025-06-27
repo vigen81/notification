@@ -71,6 +71,7 @@ type Attachment struct {
 
 // BatchNotificationRequest represents a batch notification request
 type BatchNotificationRequest struct {
+	TenantID    int64                  `json:"tenant_id" example:"123"`
 	Type        NotificationType       `json:"type" example:"EMAIL" enums:"EMAIL,SMS,PUSH"`
 	Recipients  []string               `json:"recipients" example:"user1@example.com,user2@example.com"`
 	Body        string                 `json:"body" example:"Hello! This is a batch notification."`
@@ -103,10 +104,26 @@ type NotificationStatusResponse struct {
 	RequestID    string    `json:"request_id" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Status       string    `json:"status" example:"COMPLETED"`
 	Type         string    `json:"type" example:"EMAIL"`
+	TenantID     int64     `json:"tenant_id" example:"123"`
 	CreatedAt    time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
 	UpdatedAt    time.Time `json:"updated_at" example:"2023-01-01T00:01:00Z"`
 	ErrorMessage *string   `json:"error_message,omitempty" example:"SMTP connection failed"`
 	ScheduleTS   *int64    `json:"schedule_ts,omitempty" example:"1640995200"`
+}
+
+// BatchNotificationStatusResponse represents the status response for a batch of notifications
+type BatchNotificationStatusResponse struct {
+	RequestID      string    `json:"request_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440000"`
+	BatchID        string    `json:"batch_id,omitempty" example:"batch_123"`
+	Status         string    `json:"status" example:"COMPLETED"`
+	Type           string    `json:"type" example:"EMAIL"`
+	TenantID       int64     `json:"tenant_id" example:"123"`
+	CreatedAt      time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
+	UpdatedAt      time.Time `json:"updated_at" example:"2023-01-01T00:01:00Z"`
+	TotalCount     int       `json:"total_count" example:"100"`
+	CompletedCount int       `json:"completed_count" example:"95"`
+	FailedCount    int       `json:"failed_count" example:"3"`
+	PendingCount   int       `json:"pending_count" example:"2"`
 }
 
 // KafkaNotificationRequest represents the Kafka message structure
