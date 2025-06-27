@@ -65,7 +65,7 @@ func NewFiberServer(
 }
 
 func (s *FiberServer) setupRoutes() {
-	// Health check endpoints (no auth required)
+	// Root level health check endpoints (for load balancers and orchestrators)
 	s.app.Get("/health", s.healthHandler.HealthCheck)
 	s.app.Get("/ready", s.healthHandler.ReadinessCheck)
 	s.app.Get("/live", s.healthHandler.LivenessCheck)
@@ -79,11 +79,10 @@ func (s *FiberServer) setupRoutes() {
 	v1 := s.app.Group("/api/v1")
 	//v1.Use(middleware.AuthMiddleware()) // Global auth - no tenant restriction
 
-	// REMOVED: Test tenant middleware - no longer needed
-	// v1.Use(func(c *fiber.Ctx) error {
-	//     c.Locals("tenant_id", int64(1001)) // REMOVED - Set test tenant
-	//     return c.Next()
-	// })
+	// Health endpoints also under /api/v1 for consistency with Swagger docs
+	v1.Get("/health", s.healthHandler.HealthCheck)
+	v1.Get("/ready", s.healthHandler.ReadinessCheck)
+	v1.Get("/live", s.healthHandler.LivenessCheck)
 
 	// Notification routes - tenant_id in request body
 	notifications := v1.Group("/notifications")

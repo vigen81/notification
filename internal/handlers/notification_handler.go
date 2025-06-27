@@ -35,15 +35,15 @@ func NewNotificationHandler(
 
 // SendNotification handles HTTP requests and publishes to Kafka
 // @Summary Send a notification
-// @Description Send a single notification via HTTP API
+// @Description Send a single notification via HTTP API. The notification can be sent immediately or scheduled for future delivery.
 // @Tags notifications
 // @Accept json
 // @Produce json
 // @Param notification body models.NotificationRequest true "Notification request"
-// @Success 202 {object} models.NotificationResponse
-// @Failure 400 {object} map[string]interface{}
-// @Failure 401 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
+// @Success 202 {object} models.NotificationResponse "Notification queued successfully"
+// @Failure 400 {object} models.ErrorResponse "Bad Request - Invalid request body or missing required fields"
+// @Failure 401 {object} models.ErrorResponse "Unauthorized - Invalid or missing JWT token"
+// @Failure 500 {object} models.ErrorResponse "Internal Server Error - Failed to queue notification"
 // @Security BearerAuth
 // @Router /notifications/send [post]
 func (h *NotificationHandler) SendNotification(c *fiber.Ctx) error {
@@ -109,15 +109,15 @@ func (h *NotificationHandler) SendNotification(c *fiber.Ctx) error {
 
 // SendBatchNotification handles batch notification requests
 // @Summary Send batch notifications
-// @Description Send multiple notifications in a batch
+// @Description Send multiple notifications in a batch to multiple recipients. Efficient for bulk operations.
 // @Tags notifications
 // @Accept json
 // @Produce json
 // @Param batch body models.BatchNotificationRequest true "Batch notification request"
-// @Success 202 {object} models.BatchNotificationResponse
-// @Failure 400 {object} map[string]interface{}
-// @Failure 401 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
+// @Success 202 {object} models.BatchNotificationResponse "Batch queued successfully"
+// @Failure 400 {object} models.ErrorResponse "Bad Request - Invalid request body or missing required fields"
+// @Failure 401 {object} models.ErrorResponse "Unauthorized - Invalid or missing JWT token"
+// @Failure 500 {object} models.ErrorResponse "Internal Server Error - Failed to queue batch"
 // @Security BearerAuth
 // @Router /notifications/batch [post]
 func (h *NotificationHandler) SendBatchNotification(c *fiber.Ctx) error {
@@ -188,13 +188,14 @@ func (h *NotificationHandler) SendBatchNotification(c *fiber.Ctx) error {
 
 // GetNotificationStatus retrieves notification status by request ID
 // @Summary Get notification status
-// @Description Get the status of a notification by request ID
+// @Description Get the current status and details of a notification by its request ID
 // @Tags notifications
 // @Produce json
-// @Param request_id path string true "Request ID"
-// @Success 200 {object} models.NotificationStatusResponse
-// @Failure 400 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
+// @Param request_id path string true "Request ID" format(uuid)
+// @Success 200 {object} models.NotificationStatusResponse "Notification status retrieved successfully"
+// @Failure 400 {object} models.ErrorResponse "Bad Request - Invalid request ID format"
+// @Failure 404 {object} models.ErrorResponse "Not Found - Notification not found"
+// @Failure 401 {object} models.ErrorResponse "Unauthorized - Invalid or missing JWT token"
 // @Security BearerAuth
 // @Router /notifications/status/{request_id} [get]
 func (h *NotificationHandler) GetNotificationStatus(c *fiber.Ctx) error {
@@ -237,13 +238,14 @@ func (h *NotificationHandler) GetNotificationStatus(c *fiber.Ctx) error {
 
 // GetBatchStatus retrieves batch status by batch ID
 // @Summary Get batch status
-// @Description Get the status of a batch by batch ID
+// @Description Get the status and statistics of a batch notification by its batch ID
 // @Tags notifications
 // @Produce json
-// @Param batch_id path string true "Batch ID"
-// @Success 200 {object} models.BatchNotificationStatusResponse
-// @Failure 400 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
+// @Param batch_id path string true "Batch ID" format(uuid)
+// @Success 200 {object} models.BatchNotificationStatusResponse "Batch status retrieved successfully"
+// @Failure 400 {object} models.ErrorResponse "Bad Request - Invalid batch ID format"
+// @Failure 404 {object} models.ErrorResponse "Not Found - Batch not found"
+// @Failure 401 {object} models.ErrorResponse "Unauthorized - Invalid or missing JWT token"
 // @Security BearerAuth
 // @Router /notifications/batch/{batch_id}/status [get]
 func (h *NotificationHandler) GetBatchStatus(c *fiber.Ctx) error {
@@ -308,16 +310,17 @@ func (h *NotificationHandler) GetBatchStatus(c *fiber.Ctx) error {
 
 // PublishToKafka handles direct Kafka publishing
 // @Summary Publish to Kafka
-// @Description Directly publish a notification to Kafka
+// @Description Directly publish a notification to Kafka bypassing the HTTP API queue. Requires additional Kafka API key.
 // @Tags kafka
 // @Accept json
 // @Produce json
 // @Param notification body models.KafkaNotificationRequest true "Kafka notification request"
-// @Success 200 {object} models.KafkaResponse
-// @Failure 400 {object} map[string]interface{}
-// @Failure 401 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
+// @Success 200 {object} models.KafkaResponse "Successfully published to Kafka"
+// @Failure 400 {object} models.ErrorResponse "Bad Request - Invalid request body"
+// @Failure 401 {object} models.ErrorResponse "Unauthorized - Invalid JWT token or Kafka API key"
+// @Failure 500 {object} models.ErrorResponse "Internal Server Error - Failed to publish to Kafka"
 // @Security BearerAuth
+// @Param X-Kafka-API-Key header string true "Kafka API Key"
 // @Router /kafka/publish [post]
 func (h *NotificationHandler) PublishToKafka(c *fiber.Ctx) error {
 	var req models.KafkaNotificationRequest
