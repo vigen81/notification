@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -52,6 +53,7 @@ func (s *NotificationService) ProcessNotification(ctx context.Context, req *mode
 		"type":       req.Type,
 		"recipients": len(req.Recipients),
 		"batch_id":   req.BatchID,
+		"scheduled":  req.ScheduleTS != nil,
 	})
 
 	// Get partner configuration
@@ -63,7 +65,7 @@ func (s *NotificationService) ProcessNotification(ctx context.Context, req *mode
 		return fmt.Errorf("failed to get partner config: %w", err)
 	}
 
-	// Store notifications in database first
+	// ALWAYS store notifications in database first (whether immediate or scheduled)
 	var notifications []*ent.Notification
 	for _, recipient := range req.Recipients {
 		notif, err := s.notifRepo.Create(ctx, req, recipient)
@@ -81,9 +83,9 @@ func (s *NotificationService) ProcessNotification(ctx context.Context, req *mode
 		return fmt.Errorf("failed to store any notifications in database")
 	}
 
-	// Check if scheduled for future
-	if req.ScheduleTS != nil && *req.ScheduleTS > 0 {
-		log.Info("Notification scheduled for future", map[string]interface{}{
+	// Check if scheduled for future - if so, just return (scheduler will handle)
+	if req.ScheduleTS != nil && *req.ScheduleTS > time.Now().Unix() {
+		log.Info("Notifications stored and scheduled for future processing", map[string]interface{}{
 			"schedule_ts": *req.ScheduleTS,
 			"count":       len(notifications),
 		})

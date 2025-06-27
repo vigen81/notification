@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/sirupsen/logrus"
+	_ "gitlab.smartbet.am/golang/notification/ent/schema"
 	"gitlab.smartbet.am/golang/notification/internal/repository"
 )
 
@@ -48,7 +49,8 @@ func (m *EmailProviderManager) GetProvider(tenantID int64) (EmailProvider, error
 	// Find enabled email provider
 	for _, providerConfig := range config.EmailProviders {
 		if providerConfig.Enabled {
-			provider, err := m.registry.CreateEmailProvider(providerConfig)
+			// Convert schema.ProviderConfig to the format expected by registry
+			provider, err := m.registry.CreateEmailProvider(providerConfig.Config, providerConfig.Type)
 			if err != nil {
 				continue
 			}
@@ -103,7 +105,8 @@ func (m *SMSProviderManager) GetProvider(tenantID int64) (SMSProvider, error) {
 	// Find enabled SMS provider
 	for _, providerConfig := range config.SMSProviders {
 		if providerConfig.Enabled {
-			provider, err := m.registry.CreateSMSProvider(providerConfig)
+			// Convert schema.ProviderConfig to the format expected by registry
+			provider, err := m.registry.CreateSMSProvider(providerConfig.Config, providerConfig.Type)
 			if err != nil {
 				continue
 			}

@@ -25,15 +25,38 @@ import (
 
 // @title Notification Engine API
 // @version 1.0
-// @description Multi-tenant notification engine supporting Email, SMS, and Push notifications
+// @description A high-performance, multi-tenant notification engine supporting Email, SMS, and Push notifications with per-partner configurations and batch processing capabilities.
+// @description
+// @description ## Features
+// @description - **Multi-tenant Architecture**: Per-partner configurations with isolated data
+// @description - **Multiple Notification Types**: Email, SMS, and Push notifications
+// @description - **Provider Flexibility**: Support for multiple providers per channel
+// @description - **Dual API Support**: HTTP REST API and Kafka messaging
+// @description - **Batch Processing**: Efficient batch sending with configurable thresholds
+// @description - **Scheduled Notifications**: Support for future-dated notifications
+// @description - **Message Type Based Routing**: Different from addresses based on message type
+// @description - **Global Authentication**: Manage any tenant from a single authenticated session
+// @description
+// @description ## Authentication
+// @description All API endpoints require a JWT Bearer token. The token should contain admin-level permissions to access any tenant.
+// @description For Kafka endpoints, an additional X-Kafka-API-Key header is required.
+// @description
+// @description ## Message Types
+// @description - `bonus`: Bonus-related notifications
+// @description - `promo`: Promotional messages
+// @description - `report`: Report and analytics notifications
+// @description - `system`: System and account notifications
+// @description - `payment`: Payment-related notifications
+// @description - `support`: Customer support messages
+// @description
+// @description ## Scheduling
+// @description Notifications can be scheduled for future delivery by providing a `schedule_ts` timestamp (Unix epoch).
+// @description Immediate notifications are processed right away, while scheduled ones are handled by the scheduler worker.
+// @description
+// @description ## Rate Limits
+// @description Each tenant can configure rate limits per notification type. Default limits apply if not configured.
+
 // @termsOfService http://swagger.io/terms/
-
-// @contact.name API Support
-// @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
-
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
 // @host localhost:8080
 // @BasePath /api/v1
@@ -41,7 +64,19 @@ import (
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
-// @description Type "Bearer" followed by a space and JWT token.
+// @description Type "Bearer" followed by a space and JWT token. Example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+// @tag.name notifications
+// @tag.description Notification sending and status operations
+
+// @tag.name configuration
+// @tag.description Partner configuration management
+
+// @tag.name kafka
+// @tag.description Direct Kafka operations
+
+// @tag.name health
+// @tag.description Health and readiness checks
 
 func main() {
 	fx.New(

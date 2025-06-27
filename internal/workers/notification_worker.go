@@ -98,18 +98,10 @@ func (w *NotificationWorker) processMessage(ctx context.Context, msg *message.Me
 		"tenant_id":  req.TenantID,
 		"type":       req.Type,
 		"recipients": len(req.Recipients),
+		"scheduled":  req.ScheduleTS != nil,
 	}).Info("Processing notification request")
 
-	// Check if it's scheduled for future
-	if req.ScheduleTS != nil && *req.ScheduleTS > time.Now().Unix() {
-		// Skip processing for now, scheduler worker will handle it
-		w.logger.WithFields(logrus.Fields{
-			"request_id":  req.RequestID,
-			"schedule_ts": *req.ScheduleTS,
-		}).Info("Notification scheduled for future")
-		return nil
-	}
-
-	// Process notification immediately
+	// REMOVED THE EARLY RETURN - Let the service handle ALL logic
+	// The NotificationService will store in DB and decide whether to send immediately or schedule
 	return w.notificationSvc.ProcessNotification(ctx, &req)
 }

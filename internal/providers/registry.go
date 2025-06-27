@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sync"
 
-	"gitlab.smartbet.am/golang/notification/internal/models"
 	"gitlab.smartbet.am/golang/notification/internal/providers/email"
 	"gitlab.smartbet.am/golang/notification/internal/providers/sms"
 )
@@ -71,40 +70,55 @@ func (r *ProviderRegistry) RegisterPushProvider(name string, factory PushProvide
 	r.pushFactories[name] = factory
 }
 
-func (r *ProviderRegistry) CreateEmailProvider(config models.ProviderConfig) (EmailProvider, error) {
+// Updated methods to accept config and type separately
+func (r *ProviderRegistry) CreateEmailProvider(config map[string]interface{}, providerType string) (EmailProvider, error) {
 	r.mu.RLock()
-	factory, exists := r.emailFactories[config.Type]
+	factory, exists := r.emailFactories[providerType]
 	r.mu.RUnlock()
 
 	if !exists {
-		return nil, fmt.Errorf("email provider %s not registered", config.Type)
+		return nil, fmt.Errorf("email provider %s not registered", providerType)
 	}
 
-	return factory(config.Config)
+	return factory(config)
 }
 
-func (r *ProviderRegistry) CreateSMSProvider(config models.ProviderConfig) (SMSProvider, error) {
+func (r *ProviderRegistry) CreateSMSProvider(config map[string]interface{}, providerType string) (SMSProvider, error) {
 	r.mu.RLock()
-	factory, exists := r.smsFactories[config.Type]
+	factory, exists := r.smsFactories[providerType]
 	r.mu.RUnlock()
 
 	if !exists {
-		return nil, fmt.Errorf("sms provider %s not registered", config.Type)
+		return nil, fmt.Errorf("sms provider %s not registered", providerType)
 	}
 
-	return factory(config.Config)
+	return factory(config)
 }
 
-func (r *ProviderRegistry) CreatePushProvider(config models.ProviderConfig) (PushProvider, error) {
+func (r *ProviderRegistry) CreatePushProvider(config map[string]interface{}, providerType string) (PushProvider, error) {
 	r.mu.RLock()
-	factory, exists := r.pushFactories[config.Type]
+	factory, exists := r.pushFactories[providerType]
 	r.mu.RUnlock()
 
 	if !exists {
-		return nil, fmt.Errorf("push provider %s not registered", config.Type)
+		return nil, fmt.Errorf("push provider %s not registered", providerType)
 	}
 
-	return factory(config.Config)
+	return factory(config)
+}
+
+// Legacy methods for backward compatibility (if needed elsewhere)
+// These can be removed if not used anywhere else
+func (r *ProviderRegistry) CreateEmailProviderLegacy(providerConfig interface{}) (EmailProvider, error) {
+	// This would need type assertion and conversion logic
+	// Only implement if needed for backward compatibility
+	return nil, fmt.Errorf("legacy method not implemented")
+}
+
+func (r *ProviderRegistry) CreateSMSProviderLegacy(providerConfig interface{}) (SMSProvider, error) {
+	// This would need type assertion and conversion logic
+	// Only implement if needed for backward compatibility
+	return nil, fmt.Errorf("legacy method not implemented")
 }
 
 // GetRegisteredEmailProviders returns a list of registered email provider types

@@ -18,21 +18,6 @@ definitions:
         example: sendx
         type: string
     type: object
-  models.Attachment:
-    properties:
-      content:
-        example: base64_encoded_content
-        type: string
-      disposition:
-        example: attachment
-        type: string
-      filename:
-        example: document.pdf
-        type: string
-      type:
-        example: application/pdf
-        type: string
-    type: object
   models.BatchNotificationRequest:
     properties:
       body:
@@ -50,13 +35,6 @@ definitions:
       message_type:
         allOf:
         - $ref: '#/definitions/models.MessageType'
-        enum:
-        - bonus
-        - promo
-        - report
-        - system
-        - payment
-        - support
         example: promo
       recipients:
         example:
@@ -75,15 +53,11 @@ definitions:
         example: batch
         type: string
       tenant_id:
-        example: 123
+        example: 1001
         type: integer
       type:
         allOf:
         - $ref: '#/definitions/models.NotificationType'
-        enum:
-        - EMAIL
-        - SMS
-        - PUSH
         example: EMAIL
     type: object
   models.BatchNotificationResponse:
@@ -101,6 +75,102 @@ definitions:
         example: 100
         type: integer
     type: object
+  models.BatchNotificationStatusResponse:
+    properties:
+      batch_id:
+        example: batch_123
+        type: string
+      completed_count:
+        example: 95
+        type: integer
+      created_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      failed_count:
+        example: 3
+        type: integer
+      pending_count:
+        example: 2
+        type: integer
+      request_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      status:
+        example: COMPLETED
+        type: string
+      tenant_id:
+        example: 1001
+        type: integer
+      total_count:
+        example: 100
+        type: integer
+      type:
+        example: EMAIL
+        type: string
+      updated_at:
+        example: "2023-01-01T00:01:00Z"
+        type: string
+    type: object
+  models.ConfigSuccessResponse:
+    properties:
+      message:
+        example: Configuration updated successfully
+        type: string
+      status:
+        example: success
+        type: string
+      tenant_id:
+        example: 1001
+        type: integer
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+    type: object
+  models.ErrorResponse:
+    properties:
+      code:
+        example: VALIDATION_ERROR
+        type: string
+      details: {}
+      error:
+        example: Validation failed
+        type: string
+      message:
+        example: Additional error details
+        type: string
+      request_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+    type: object
+  models.HealthCheckDetail:
+    properties:
+      database:
+        example: ok
+        type: string
+      kafka:
+        example: ok
+        type: string
+    type: object
+  models.HealthResponse:
+    properties:
+      checks:
+        $ref: '#/definitions/models.HealthCheckDetail'
+      service:
+        example: notification-engine
+        type: string
+      status:
+        example: ok
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      version:
+        example: 1.0.0
+        type: string
+    type: object
   models.KafkaNotificationRequest:
     properties:
       body:
@@ -115,13 +185,6 @@ definitions:
       message_type:
         allOf:
         - $ref: '#/definitions/models.MessageType'
-        enum:
-        - bonus
-        - promo
-        - report
-        - system
-        - payment
-        - support
         example: system
       recipients:
         example:
@@ -130,15 +193,11 @@ definitions:
           type: string
         type: array
       tenant_id:
-        example: 123
+        example: 1001
         type: integer
       type:
         allOf:
         - $ref: '#/definitions/models.NotificationType'
-        enum:
-        - EMAIL
-        - SMS
-        - PUSH
         example: EMAIL
     type: object
   models.KafkaResponse:
@@ -167,6 +226,46 @@ definitions:
     - MessageTypePayment
     - MessageTypeSupport
   models.NotificationRequest:
+    properties:
+      body:
+        example: Hello World! This is your notification.
+        type: string
+      data:
+        additionalProperties: true
+        type: object
+      from:
+        example: noreply@example.com
+        type: string
+      headline:
+        example: Important Notification
+        type: string
+      message_type:
+        allOf:
+        - $ref: '#/definitions/models.MessageType'
+        example: bonus
+      recipients:
+        example:
+        - user@example.com
+        items:
+          type: string
+        type: array
+      reply_to:
+        example: support@example.com
+        type: string
+      schedule_ts:
+        example: 1640995200
+        type: integer
+      tag:
+        example: marketing
+        type: string
+      tenant_id:
+        description: Public fields for API
+        example: 1001
+        type: integer
+      type:
+        allOf:
+        - $ref: '#/definitions/models.NotificationType'
+        example: EMAIL
     type: object
   models.NotificationResponse:
     properties:
@@ -198,7 +297,7 @@ definitions:
         example: COMPLETED
         type: string
       tenant_id:
-        example: 123
+        example: 1001
         type: integer
       type:
         example: EMAIL
@@ -222,6 +321,7 @@ definitions:
       batch_config:
         $ref: '#/definitions/schema.BatchConfig'
       created_at:
+        example: "2023-01-01T00:00:00Z"
         type: string
       email_providers:
         items:
@@ -231,6 +331,7 @@ definitions:
         example: true
         type: boolean
       id:
+        example: goodwin-casino-1001
         type: string
       push_providers:
         items:
@@ -245,9 +346,10 @@ definitions:
           $ref: '#/definitions/schema.ProviderConfig'
         type: array
       tenant_id:
-        example: 123
+        example: 1001
         type: integer
       updated_at:
+        example: "2023-01-01T00:01:00Z"
         type: string
     type: object
   models.PartnerConfigRequest:
@@ -308,24 +410,96 @@ definitions:
     type: object
 host: localhost:8080
 info:
-  contact:
-    email: support@swagger.io
-    name: API Support
-    url: http://www.swagger.io/support
-  description: Multi-tenant notification engine supporting Email, SMS, and Push notifications
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  contact: {}
+  description: |-
+    A high-performance, multi-tenant notification engine supporting Email, SMS, and Push notifications with per-partner configurations and batch processing capabilities.
+
+    ## Features
+    - **Multi-tenant Architecture**: Per-partner configurations with isolated data
+    - **Multiple Notification Types**: Email, SMS, and Push notifications
+    - **Provider Flexibility**: Support for multiple providers per channel
+    - **Dual API Support**: HTTP REST API and Kafka messaging
+    - **Batch Processing**: Efficient batch sending with configurable thresholds
+    - **Scheduled Notifications**: Support for future-dated notifications
+    - **Message Type Based Routing**: Different from addresses based on message type
+    - **Global Authentication**: Manage any tenant from a single authenticated session
+
+    ## Authentication
+    All API endpoints require a JWT Bearer token. The token should contain admin-level permissions to access any tenant.
+    For Kafka endpoints, an additional X-Kafka-API-Key header is required.
+
+    ## Message Types
+    - `bonus`: Bonus-related notifications
+    - `promo`: Promotional messages
+    - `report`: Report and analytics notifications
+    - `system`: System and account notifications
+    - `payment`: Payment-related notifications
+    - `support`: Customer support messages
+
+    ## Scheduling
+    Notifications can be scheduled for future delivery by providing a `schedule_ts` timestamp (Unix epoch).
+    Immediate notifications are processed right away, while scheduled ones are handled by the scheduler worker.
+
+    ## Rate Limits
+    Each tenant can configure rate limits per notification type. Default limits apply if not configured.
   termsOfService: http://swagger.io/terms/
   title: Notification Engine API
   version: "1.0"
 paths:
+  /api/v1/health:
+    get:
+      description: Returns the general health status of the notification engine service.
+        Available at both /health and /api/v1/health
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service is healthy
+          schema:
+            $ref: '#/definitions/models.HealthResponse'
+      summary: Health check
+      tags:
+      - health
+  /api/v1/live:
+    get:
+      description: Returns the liveness status of the notification engine. Available
+        at both /live and /api/v1/live
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service is alive
+          schema:
+            $ref: '#/definitions/models.HealthResponse'
+      summary: Liveness check
+      tags:
+      - health
+  /api/v1/ready:
+    get:
+      description: Returns the readiness status of the notification engine including
+        dependency checks. Available at both /ready and /api/v1/ready
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service is ready to accept requests
+          schema:
+            $ref: '#/definitions/models.HealthResponse'
+        "503":
+          description: Service is not ready - dependencies not available
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Readiness check
+      tags:
+      - health
   /config/{tenant_id}:
     get:
-      description: Get the configuration for a specific tenant by tenant_id
+      description: Get the complete configuration for a specific tenant including
+        email, SMS, push providers, batch settings, and rate limits
       parameters:
       - description: Tenant ID
         in: path
+        minimum: 1
         name: tenant_id
         required: true
         type: integer
@@ -333,24 +507,25 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Configuration retrieved successfully
           schema:
             $ref: '#/definitions/models.PartnerConfig'
         "400":
-          description: Bad Request
+          description: Bad Request - Invalid tenant ID
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized
+          description: Unauthorized - Invalid or missing JWT token
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found - Tenant configuration not found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Internal Server Error - Failed to retrieve configuration
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get partner configuration
@@ -359,10 +534,12 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update the configuration for a specific tenant
+      description: Update the complete configuration for a specific tenant. This replaces
+        the entire configuration.
       parameters:
       - description: Tenant ID
         in: path
+        minimum: 1
         name: tenant_id
         required: true
         type: integer
@@ -376,25 +553,21 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Configuration updated successfully
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ConfigSuccessResponse'
         "400":
-          description: Bad Request
+          description: Bad Request - Invalid tenant ID or request body
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized
+          description: Unauthorized - Invalid or missing JWT token
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Internal Server Error - Failed to save configuration
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update partner configuration
@@ -402,14 +575,20 @@ paths:
       - configuration
   /config/{tenant_id}/providers/{type}/{name}:
     delete:
-      description: Remove a provider from a specific tenant configuration
+      description: Remove a specific provider from a tenant configuration by provider
+        type and name
       parameters:
       - description: Tenant ID
         in: path
+        minimum: 1
         name: tenant_id
         required: true
         type: integer
-      - description: Provider type (email, sms, push)
+      - description: Provider type
+        enum:
+        - email
+        - sms
+        - push
         in: path
         name: type
         required: true
@@ -421,30 +600,25 @@ paths:
         type: string
       responses:
         "200":
-          description: OK
+          description: Provider removed successfully
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ConfigSuccessResponse'
         "400":
-          description: Bad Request
+          description: Bad Request - Invalid parameters
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized
+          description: Unauthorized - Invalid or missing JWT token
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
-          description: Not Found
+          description: Not Found - Provider not found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Internal Server Error - Failed to save configuration
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Remove provider
@@ -454,10 +628,12 @@ paths:
     post:
       consumes:
       - application/json
-      description: Add a new email provider to a specific tenant configuration
+      description: Add a new email provider to a specific tenant configuration. Supports
+        SMTP, SendGrid, SendX providers.
       parameters:
       - description: Tenant ID
         in: path
+        minimum: 1
         name: tenant_id
         required: true
         type: integer
@@ -471,25 +647,21 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: Email provider added successfully
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ConfigSuccessResponse'
         "400":
-          description: Bad Request
+          description: Bad Request - Invalid tenant ID or provider configuration
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized
+          description: Unauthorized - Invalid or missing JWT token
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Internal Server Error - Failed to save configuration
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Add email provider
@@ -499,10 +671,12 @@ paths:
     post:
       consumes:
       - application/json
-      description: Add a new push provider to a specific tenant configuration
+      description: Add a new push provider to a specific tenant configuration. Supports
+        FCM (Firebase Cloud Messaging).
       parameters:
       - description: Tenant ID
         in: path
+        minimum: 1
         name: tenant_id
         required: true
         type: integer
@@ -516,25 +690,21 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: Push provider added successfully
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ConfigSuccessResponse'
         "400":
-          description: Bad Request
+          description: Bad Request - Invalid tenant ID or provider configuration
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized
+          description: Unauthorized - Invalid or missing JWT token
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Internal Server Error - Failed to save configuration
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Add push provider
@@ -544,10 +714,12 @@ paths:
     post:
       consumes:
       - application/json
-      description: Add a new SMS provider to a specific tenant configuration
+      description: Add a new SMS provider to a specific tenant configuration. Supports
+        Twilio, Nexmo providers.
       parameters:
       - description: Tenant ID
         in: path
+        minimum: 1
         name: tenant_id
         required: true
         type: integer
@@ -561,25 +733,21 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: SMS provider added successfully
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ConfigSuccessResponse'
         "400":
-          description: Bad Request
+          description: Bad Request - Invalid tenant ID or provider configuration
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized
+          description: Unauthorized - Invalid or missing JWT token
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Internal Server Error - Failed to save configuration
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Add SMS provider
@@ -587,15 +755,15 @@ paths:
       - configuration
   /health:
     get:
-      description: Returns the health status of the notification engine
+      description: Returns the general health status of the notification engine service.
+        Available at both /health and /api/v1/health
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Service is healthy
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.HealthResponse'
       summary: Health check
       tags:
       - health
@@ -603,7 +771,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Directly publish a notification to Kafka
+      description: Directly publish a notification to Kafka bypassing the HTTP API
+        queue. Requires additional Kafka API key.
       parameters:
       - description: Kafka notification request
         in: body
@@ -611,28 +780,30 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/models.KafkaNotificationRequest'
+      - description: Kafka API Key
+        in: header
+        name: X-Kafka-API-Key
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Successfully published to Kafka
           schema:
             $ref: '#/definitions/models.KafkaResponse'
         "400":
-          description: Bad Request
+          description: Bad Request - Invalid request body
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized
+          description: Unauthorized - Invalid JWT token or Kafka API key
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Internal Server Error - Failed to publish to Kafka
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Publish to Kafka
@@ -640,15 +811,15 @@ paths:
       - kafka
   /live:
     get:
-      description: Returns the liveness status of the notification engine
+      description: Returns the liveness status of the notification engine. Available
+        at both /live and /api/v1/live
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Service is alive
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.HealthResponse'
       summary: Liveness check
       tags:
       - health
@@ -656,7 +827,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send multiple notifications in a batch
+      description: Send multiple notifications in a batch to multiple recipients.
+        Efficient for bulk operations.
       parameters:
       - description: Batch notification request
         in: body
@@ -668,34 +840,67 @@ paths:
       - application/json
       responses:
         "202":
-          description: Accepted
+          description: Batch queued successfully
           schema:
             $ref: '#/definitions/models.BatchNotificationResponse'
         "400":
-          description: Bad Request
+          description: Bad Request - Invalid request body or missing required fields
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized
+          description: Unauthorized - Invalid or missing JWT token
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Internal Server Error - Failed to queue batch
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Send batch notifications
+      tags:
+      - notifications
+  /notifications/batch/{batch_id}/status:
+    get:
+      description: Get the status and statistics of a batch notification by its batch
+        ID
+      parameters:
+      - description: Batch ID
+        format: uuid
+        in: path
+        name: batch_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Batch status retrieved successfully
+          schema:
+            $ref: '#/definitions/models.BatchNotificationStatusResponse'
+        "400":
+          description: Bad Request - Invalid batch ID format
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized - Invalid or missing JWT token
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found - Batch not found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get batch status
       tags:
       - notifications
   /notifications/send:
     post:
       consumes:
       - application/json
-      description: Send a single notification via HTTP API
+      description: Send a single notification via HTTP API. The notification can be
+        sent immediately or scheduled for future delivery.
       parameters:
       - description: Notification request
         in: body
@@ -707,24 +912,21 @@ paths:
       - application/json
       responses:
         "202":
-          description: Accepted
+          description: Notification queued successfully
           schema:
             $ref: '#/definitions/models.NotificationResponse'
         "400":
-          description: Bad Request
+          description: Bad Request - Invalid request body or missing required fields
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized
+          description: Unauthorized - Invalid or missing JWT token
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Internal Server Error - Failed to queue notification
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Send a notification
@@ -732,9 +934,11 @@ paths:
       - notifications
   /notifications/status/{request_id}:
     get:
-      description: Get the status of a notification by request ID
+      description: Get the current status and details of a notification by its request
+        ID
       parameters:
       - description: Request ID
+        format: uuid
         in: path
         name: request_id
         required: true
@@ -743,19 +947,21 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Notification status retrieved successfully
           schema:
             $ref: '#/definitions/models.NotificationStatusResponse'
         "400":
-          description: Bad Request
+          description: Bad Request - Invalid request ID format
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized - Invalid or missing JWT token
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
-          description: Not Found
+          description: Not Found - Notification not found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get notification status
@@ -763,22 +969,36 @@ paths:
       - notifications
   /ready:
     get:
-      description: Returns the readiness status of the notification engine
+      description: Returns the readiness status of the notification engine including
+        dependency checks. Available at both /ready and /api/v1/ready
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Service is ready to accept requests
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/models.HealthResponse'
+        "503":
+          description: Service is not ready - dependencies not available
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
       summary: Readiness check
       tags:
       - health
 securityDefinitions:
   BearerAuth:
-    description: Type "Bearer" followed by a space and JWT token.
+    description: 'Type "Bearer" followed by a space and JWT token. Example: "Bearer
+      eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."'
     in: header
     name: Authorization
     type: apiKey
 swagger: "2.0"
+tags:
+- description: Notification sending and status operations
+  name: notifications
+- description: Partner configuration management
+  name: configuration
+- description: Direct Kafka operations
+  name: kafka
+- description: Health and readiness checks
+  name: health
