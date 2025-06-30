@@ -46,6 +46,10 @@ const (
 	FieldMeta = "meta"
 	// FieldErrorMessage holds the string denoting the error_message field in the database.
 	FieldErrorMessage = "error_message"
+	// FieldBatchID holds the string denoting the batch_id field in the database.
+	FieldBatchID = "batch_id"
+	// FieldRetryCount holds the string denoting the retry_count field in the database.
+	FieldRetryCount = "retry_count"
 	// Table holds the table name of the notification in the database.
 	Table = "notifications"
 )
@@ -69,6 +73,8 @@ var Columns = []string{
 	FieldStatus,
 	FieldMeta,
 	FieldErrorMessage,
+	FieldBatchID,
+	FieldRetryCount,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -88,6 +94,8 @@ var (
 	DefaultUpdateTime func() time.Time
 	// UpdateDefaultUpdateTime holds the default value on update for the "update_time" field.
 	UpdateDefaultUpdateTime func() time.Time
+	// DefaultRetryCount holds the default value on creation for the "retry_count" field.
+	DefaultRetryCount int
 )
 
 // Type defines the type for the "type" enum field.
@@ -224,4 +232,14 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByErrorMessage orders the results by the error_message field.
 func ByErrorMessage(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldErrorMessage, opts...).ToFunc()
+}
+
+// ByBatchID orders the results by the batch_id field.
+func ByBatchID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBatchID, opts...).ToFunc()
+}
+
+// ByRetryCount orders the results by the retry_count field.
+func ByRetryCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRetryCount, opts...).ToFunc()
 }

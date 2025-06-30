@@ -1,29 +1,52 @@
-FROM golang:alpine AS build
-ENV CGO_ENABLED=0 GOOS=linux
-WORKDIR /go/src/app
-RUN apk add make ca-certificates tzdata git
+FROM golang:1.24.4-alpine AS builder
 
-ENV GOPRIVATE="gitlab.com/healthcare-integration"
-ARG gitlab_user
-ENV gitlab_user=$gitlab_user
-ARG gitlab_personal_token
-ENV gitlab_personal_token=$gitlab_personal_token
-RUN git config --global url."https://${gitlab_user}:${gitlab_personal_token}@gitlab.com:".insteadOf "https://gitlab.com"
+# Install dependencies
+RUN apk add --no-cache git ca-certificates tzdata
 
+WORKDIR /app
 
-
+# Copy go mod files first
 COPY go.mod go.sum ./
+
+# Download initial dependencies
 RUN go mod download
+
+# Copy source code
 COPY . .
-RUN make  build
 
+# Tidy modules after copying source (this will add any missing dependencies)
+RUN go mod tidy
 
+# Generate Ent code (this might add more dependencies)
+RUN go generate ./ent
 
-FROM scratch
-COPY --from=build /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=build /etc/ssl/certs /etc/ssl/certs
-COPY --from=build /go/src/app/app /app
+# Tidy again after generation to ensure all dependencies are included
+RUN go mod tidy
 
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o notification-engine ./cmd/server
 
-ENTRYPOINT ["/app"]
+# Final stage
+FROM alpine:latest
 
+RUN apk --no-cache add ca-certificates tzdata
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /app/notification-engine .
+
+# Copy config files
+COPY --from=builder /app/config ./config
+
+# Create non-root user
+RUN addgroup -g 1001 -S notifier && \
+    adduser -S notifier -u 1001 -G notifier
+
+USER notifier
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+
+CMD ["./notification-engine"]

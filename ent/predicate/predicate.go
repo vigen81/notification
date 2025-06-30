@@ -8,3 +8,6 @@ import (
 
 // Notification is the predicate function for notification builders.
 type Notification func(*sql.Selector)
+
+// PartnerConfig is the predicate function for partnerconfig builders.
+type PartnerConfig func(*sql.Selector)

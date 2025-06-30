@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// Notification is the client for interacting with the Notification builders.
 	Notification *NotificationClient
+	// PartnerConfig is the client for interacting with the PartnerConfig builders.
+	PartnerConfig *PartnerConfigClient
 
 	// lazily loaded.
 	client     *Client
@@ -146,6 +148,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Notification = NewNotificationClient(tx.config)
+	tx.PartnerConfig = NewPartnerConfigClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

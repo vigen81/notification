@@ -1,8 +1,0 @@
-POST https://callback-tw.healthcoding.io/incoming-message
-Content-Type: application/json
-
-{
-  "status": "stop",
-  "from": "+12025550123",
-  "sid": "MGe6e0148842e5475e969e478a1ac3efc0"
-}

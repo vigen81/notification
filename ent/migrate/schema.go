@@ -28,6 +28,8 @@ var (
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"ACTIVE", "COMPLETED", "CANCEL", "PENDING", "FAILED"}, Default: "PENDING"},
 		{Name: "meta", Type: field.TypeJSON, Nullable: true},
 		{Name: "error_message", Type: field.TypeString, Nullable: true},
+		{Name: "batch_id", Type: field.TypeString, Nullable: true},
+		{Name: "retry_count", Type: field.TypeInt, Default: 0},
 	}
 	// NotificationsTable holds the schema information for the "notifications" table.
 	NotificationsTable = &schema.Table{
@@ -48,11 +50,58 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{NotificationsColumns[12], NotificationsColumns[14]},
 			},
+			{
+				Name:    "notification_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{NotificationsColumns[4], NotificationsColumns[14]},
+			},
+			{
+				Name:    "notification_batch_id",
+				Unique:  false,
+				Columns: []*schema.Column{NotificationsColumns[17]},
+			},
+			{
+				Name:    "notification_type_status",
+				Unique:  false,
+				Columns: []*schema.Column{NotificationsColumns[13], NotificationsColumns[14]},
+			},
+		},
+	}
+	// PartnerConfigsColumns holds the columns for the "partner_configs" table.
+	PartnerConfigsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
+		{Name: "tenant_id", Type: field.TypeInt64, Unique: true},
+		{Name: "email_providers", Type: field.TypeJSON, Nullable: true},
+		{Name: "sms_providers", Type: field.TypeJSON, Nullable: true},
+		{Name: "push_providers", Type: field.TypeJSON, Nullable: true},
+		{Name: "batch_config", Type: field.TypeJSON, Nullable: true},
+		{Name: "rate_limits", Type: field.TypeJSON, Nullable: true},
+		{Name: "enabled", Type: field.TypeBool, Default: true},
+	}
+	// PartnerConfigsTable holds the schema information for the "partner_configs" table.
+	PartnerConfigsTable = &schema.Table{
+		Name:       "partner_configs",
+		Columns:    PartnerConfigsColumns,
+		PrimaryKey: []*schema.Column{PartnerConfigsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "partnerconfig_tenant_id",
+				Unique:  false,
+				Columns: []*schema.Column{PartnerConfigsColumns[3]},
+			},
+			{
+				Name:    "partnerconfig_enabled",
+				Unique:  false,
+				Columns: []*schema.Column{PartnerConfigsColumns[9]},
+			},
 		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		NotificationsTable,
+		PartnerConfigsTable,
 	}
 )
 

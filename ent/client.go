@@ -15,6 +15,7 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"gitlab.smartbet.am/golang/notification/ent/notification"
+	"gitlab.smartbet.am/golang/notification/ent/partnerconfig"
 )
 
 // Client is the client that holds all ent builders.
@@ -24,6 +25,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// Notification is the client for interacting with the Notification builders.
 	Notification *NotificationClient
+	// PartnerConfig is the client for interacting with the PartnerConfig builders.
+	PartnerConfig *PartnerConfigClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -36,6 +39,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Notification = NewNotificationClient(c.config)
+	c.PartnerConfig = NewPartnerConfigClient(c.config)
 }
 
 type (
@@ -126,9 +130,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:          ctx,
-		config:       cfg,
-		Notification: NewNotificationClient(cfg),
+		ctx:           ctx,
+		config:        cfg,
+		Notification:  NewNotificationClient(cfg),
+		PartnerConfig: NewPartnerConfigClient(cfg),
 	}, nil
 }
 
@@ -146,9 +151,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:          ctx,
-		config:       cfg,
-		Notification: NewNotificationClient(cfg),
+		ctx:           ctx,
+		config:        cfg,
+		Notification:  NewNotificationClient(cfg),
+		PartnerConfig: NewPartnerConfigClient(cfg),
 	}, nil
 }
 
@@ -178,12 +184,14 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Notification.Use(hooks...)
+	c.PartnerConfig.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Notification.Intercept(interceptors...)
+	c.PartnerConfig.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -191,6 +199,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *NotificationMutation:
 		return c.Notification.mutate(ctx, m)
+	case *PartnerConfigMutation:
+		return c.PartnerConfig.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -329,12 +339,145 @@ func (c *NotificationClient) mutate(ctx context.Context, m *NotificationMutation
 	}
 }
 
+// PartnerConfigClient is a client for the PartnerConfig schema.
+type PartnerConfigClient struct {
+	config
+}
+
+// NewPartnerConfigClient returns a client for the PartnerConfig from the given config.
+func NewPartnerConfigClient(c config) *PartnerConfigClient {
+	return &PartnerConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `partnerconfig.Hooks(f(g(h())))`.
+func (c *PartnerConfigClient) Use(hooks ...Hook) {
+	c.hooks.PartnerConfig = append(c.hooks.PartnerConfig, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `partnerconfig.Intercept(f(g(h())))`.
+func (c *PartnerConfigClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PartnerConfig = append(c.inters.PartnerConfig, interceptors...)
+}
+
+// Create returns a builder for creating a PartnerConfig entity.
+func (c *PartnerConfigClient) Create() *PartnerConfigCreate {
+	mutation := newPartnerConfigMutation(c.config, OpCreate)
+	return &PartnerConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PartnerConfig entities.
+func (c *PartnerConfigClient) CreateBulk(builders ...*PartnerConfigCreate) *PartnerConfigCreateBulk {
+	return &PartnerConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PartnerConfigClient) MapCreateBulk(slice any, setFunc func(*PartnerConfigCreate, int)) *PartnerConfigCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PartnerConfigCreateBulk{err: fmt.Errorf("calling to PartnerConfigClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PartnerConfigCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PartnerConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PartnerConfig.
+func (c *PartnerConfigClient) Update() *PartnerConfigUpdate {
+	mutation := newPartnerConfigMutation(c.config, OpUpdate)
+	return &PartnerConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PartnerConfigClient) UpdateOne(pc *PartnerConfig) *PartnerConfigUpdateOne {
+	mutation := newPartnerConfigMutation(c.config, OpUpdateOne, withPartnerConfig(pc))
+	return &PartnerConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PartnerConfigClient) UpdateOneID(id string) *PartnerConfigUpdateOne {
+	mutation := newPartnerConfigMutation(c.config, OpUpdateOne, withPartnerConfigID(id))
+	return &PartnerConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PartnerConfig.
+func (c *PartnerConfigClient) Delete() *PartnerConfigDelete {
+	mutation := newPartnerConfigMutation(c.config, OpDelete)
+	return &PartnerConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PartnerConfigClient) DeleteOne(pc *PartnerConfig) *PartnerConfigDeleteOne {
+	return c.DeleteOneID(pc.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PartnerConfigClient) DeleteOneID(id string) *PartnerConfigDeleteOne {
+	builder := c.Delete().Where(partnerconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PartnerConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for PartnerConfig.
+func (c *PartnerConfigClient) Query() *PartnerConfigQuery {
+	return &PartnerConfigQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePartnerConfig},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PartnerConfig entity by its id.
+func (c *PartnerConfigClient) Get(ctx context.Context, id string) (*PartnerConfig, error) {
+	return c.Query().Where(partnerconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PartnerConfigClient) GetX(ctx context.Context, id string) *PartnerConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *PartnerConfigClient) Hooks() []Hook {
+	return c.hooks.PartnerConfig
+}
+
+// Interceptors returns the client interceptors.
+func (c *PartnerConfigClient) Interceptors() []Interceptor {
+	return c.inters.PartnerConfig
+}
+
+func (c *PartnerConfigClient) mutate(ctx context.Context, m *PartnerConfigMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PartnerConfigCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PartnerConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PartnerConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PartnerConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PartnerConfig mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Notification []ent.Hook
+		Notification, PartnerConfig []ent.Hook
 	}
 	inters struct {
-		Notification []ent.Interceptor
+		Notification, PartnerConfig []ent.Interceptor
 	}
 )

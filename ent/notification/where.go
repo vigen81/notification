@@ -120,6 +120,16 @@ func ErrorMessage(v string) predicate.Notification {
 	return predicate.Notification(sql.FieldEQ(FieldErrorMessage, v))
 }
 
+// BatchID applies equality check predicate on the "batch_id" field. It's identical to BatchIDEQ.
+func BatchID(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldEQ(FieldBatchID, v))
+}
+
+// RetryCount applies equality check predicate on the "retry_count" field. It's identical to RetryCountEQ.
+func RetryCount(v int) predicate.Notification {
+	return predicate.Notification(sql.FieldEQ(FieldRetryCount, v))
+}
+
 // CreateTimeEQ applies the EQ predicate on the "create_time" field.
 func CreateTimeEQ(v time.Time) predicate.Notification {
 	return predicate.Notification(sql.FieldEQ(FieldCreateTime, v))
@@ -988,6 +998,121 @@ func ErrorMessageEqualFold(v string) predicate.Notification {
 // ErrorMessageContainsFold applies the ContainsFold predicate on the "error_message" field.
 func ErrorMessageContainsFold(v string) predicate.Notification {
 	return predicate.Notification(sql.FieldContainsFold(FieldErrorMessage, v))
+}
+
+// BatchIDEQ applies the EQ predicate on the "batch_id" field.
+func BatchIDEQ(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldEQ(FieldBatchID, v))
+}
+
+// BatchIDNEQ applies the NEQ predicate on the "batch_id" field.
+func BatchIDNEQ(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldNEQ(FieldBatchID, v))
+}
+
+// BatchIDIn applies the In predicate on the "batch_id" field.
+func BatchIDIn(vs ...string) predicate.Notification {
+	return predicate.Notification(sql.FieldIn(FieldBatchID, vs...))
+}
+
+// BatchIDNotIn applies the NotIn predicate on the "batch_id" field.
+func BatchIDNotIn(vs ...string) predicate.Notification {
+	return predicate.Notification(sql.FieldNotIn(FieldBatchID, vs...))
+}
+
+// BatchIDGT applies the GT predicate on the "batch_id" field.
+func BatchIDGT(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldGT(FieldBatchID, v))
+}
+
+// BatchIDGTE applies the GTE predicate on the "batch_id" field.
+func BatchIDGTE(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldGTE(FieldBatchID, v))
+}
+
+// BatchIDLT applies the LT predicate on the "batch_id" field.
+func BatchIDLT(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldLT(FieldBatchID, v))
+}
+
+// BatchIDLTE applies the LTE predicate on the "batch_id" field.
+func BatchIDLTE(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldLTE(FieldBatchID, v))
+}
+
+// BatchIDContains applies the Contains predicate on the "batch_id" field.
+func BatchIDContains(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldContains(FieldBatchID, v))
+}
+
+// BatchIDHasPrefix applies the HasPrefix predicate on the "batch_id" field.
+func BatchIDHasPrefix(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldHasPrefix(FieldBatchID, v))
+}
+
+// BatchIDHasSuffix applies the HasSuffix predicate on the "batch_id" field.
+func BatchIDHasSuffix(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldHasSuffix(FieldBatchID, v))
+}
+
+// BatchIDIsNil applies the IsNil predicate on the "batch_id" field.
+func BatchIDIsNil() predicate.Notification {
+	return predicate.Notification(sql.FieldIsNull(FieldBatchID))
+}
+
+// BatchIDNotNil applies the NotNil predicate on the "batch_id" field.
+func BatchIDNotNil() predicate.Notification {
+	return predicate.Notification(sql.FieldNotNull(FieldBatchID))
+}
+
+// BatchIDEqualFold applies the EqualFold predicate on the "batch_id" field.
+func BatchIDEqualFold(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldEqualFold(FieldBatchID, v))
+}
+
+// BatchIDContainsFold applies the ContainsFold predicate on the "batch_id" field.
+func BatchIDContainsFold(v string) predicate.Notification {
+	return predicate.Notification(sql.FieldContainsFold(FieldBatchID, v))
+}
+
+// RetryCountEQ applies the EQ predicate on the "retry_count" field.
+func RetryCountEQ(v int) predicate.Notification {
+	return predicate.Notification(sql.FieldEQ(FieldRetryCount, v))
+}
+
+// RetryCountNEQ applies the NEQ predicate on the "retry_count" field.
+func RetryCountNEQ(v int) predicate.Notification {
+	return predicate.Notification(sql.FieldNEQ(FieldRetryCount, v))
+}
+
+// RetryCountIn applies the In predicate on the "retry_count" field.
+func RetryCountIn(vs ...int) predicate.Notification {
+	return predicate.Notification(sql.FieldIn(FieldRetryCount, vs...))
+}
+
+// RetryCountNotIn applies the NotIn predicate on the "retry_count" field.
+func RetryCountNotIn(vs ...int) predicate.Notification {
+	return predicate.Notification(sql.FieldNotIn(FieldRetryCount, vs...))
+}
+
+// RetryCountGT applies the GT predicate on the "retry_count" field.
+func RetryCountGT(v int) predicate.Notification {
+	return predicate.Notification(sql.FieldGT(FieldRetryCount, v))
+}
+
+// RetryCountGTE applies the GTE predicate on the "retry_count" field.
+func RetryCountGTE(v int) predicate.Notification {
+	return predicate.Notification(sql.FieldGTE(FieldRetryCount, v))
+}
+
+// RetryCountLT applies the LT predicate on the "retry_count" field.
+func RetryCountLT(v int) predicate.Notification {
+	return predicate.Notification(sql.FieldLT(FieldRetryCount, v))
+}
+
+// RetryCountLTE applies the LTE predicate on the "retry_count" field.
+func RetryCountLTE(v int) predicate.Notification {
+	return predicate.Notification(sql.FieldLTE(FieldRetryCount, v))
 }
 
 // And groups predicates with the AND operator between them.

@@ -198,6 +198,34 @@ func (nc *NotificationCreate) SetNillableErrorMessage(s *string) *NotificationCr
 	return nc
 }
 
+// SetBatchID sets the "batch_id" field.
+func (nc *NotificationCreate) SetBatchID(s string) *NotificationCreate {
+	nc.mutation.SetBatchID(s)
+	return nc
+}
+
+// SetNillableBatchID sets the "batch_id" field if the given value is not nil.
+func (nc *NotificationCreate) SetNillableBatchID(s *string) *NotificationCreate {
+	if s != nil {
+		nc.SetBatchID(*s)
+	}
+	return nc
+}
+
+// SetRetryCount sets the "retry_count" field.
+func (nc *NotificationCreate) SetRetryCount(i int) *NotificationCreate {
+	nc.mutation.SetRetryCount(i)
+	return nc
+}
+
+// SetNillableRetryCount sets the "retry_count" field if the given value is not nil.
+func (nc *NotificationCreate) SetNillableRetryCount(i *int) *NotificationCreate {
+	if i != nil {
+		nc.SetRetryCount(*i)
+	}
+	return nc
+}
+
 // Mutation returns the NotificationMutation object of the builder.
 func (nc *NotificationCreate) Mutation() *NotificationMutation {
 	return nc.mutation
@@ -245,6 +273,10 @@ func (nc *NotificationCreate) defaults() {
 		v := notification.DefaultStatus
 		nc.mutation.SetStatus(v)
 	}
+	if _, ok := nc.mutation.RetryCount(); !ok {
+		v := notification.DefaultRetryCount
+		nc.mutation.SetRetryCount(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -282,6 +314,9 @@ func (nc *NotificationCreate) check() error {
 		if err := notification.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Notification.status": %w`, err)}
 		}
+	}
+	if _, ok := nc.mutation.RetryCount(); !ok {
+		return &ValidationError{Name: "retry_count", err: errors.New(`ent: missing required field "Notification.retry_count"`)}
 	}
 	return nil
 }
@@ -372,6 +407,14 @@ func (nc *NotificationCreate) createSpec() (*Notification, *sqlgraph.CreateSpec)
 	if value, ok := nc.mutation.ErrorMessage(); ok {
 		_spec.SetField(notification.FieldErrorMessage, field.TypeString, value)
 		_node.ErrorMessage = &value
+	}
+	if value, ok := nc.mutation.BatchID(); ok {
+		_spec.SetField(notification.FieldBatchID, field.TypeString, value)
+		_node.BatchID = value
+	}
+	if value, ok := nc.mutation.RetryCount(); ok {
+		_spec.SetField(notification.FieldRetryCount, field.TypeInt, value)
+		_node.RetryCount = value
 	}
 	return _node, _spec
 }

@@ -21,6 +21,18 @@ func (f NotificationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NotificationMutation", m)
 }
 
+// The PartnerConfigFunc type is an adapter to allow the use of ordinary
+// function as PartnerConfig mutator.
+type PartnerConfigFunc func(context.Context, *ent.PartnerConfigMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PartnerConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PartnerConfigMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PartnerConfigMutation", m)
+}
+
 // Condition is a hook condition function.
 type Condition func(context.Context, ent.Mutation) bool
 
