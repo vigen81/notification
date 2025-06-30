@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -74,123 +75,143 @@ func clearData(ctx context.Context, client *ent.Client, logger *logrus.Logger) {
 
 func seedPartnerConfigsSafe(ctx context.Context, client *ent.Client, logger *logrus.Logger) {
 	configs := []struct {
-		id          string
-		tenantID    int64
-		name        string
-		emailConfig string
-		smsConfig   string
-		pushConfig  string
-		batchConfig string
-		enabled     bool
+		id             string
+		tenantID       int64
+		name           string
+		emailProviders []schema.ProviderConfig
+		smsProviders   []schema.ProviderConfig
+		pushProviders  []schema.ProviderConfig
+		batchConfig    *schema.BatchConfig
+		rateLimits     map[string]schema.RateLimit
+		enabled        bool
 	}{
 		{
 			id:       "goodwin-casino-1001",
 			tenantID: 1001,
 			name:     "Goodwin Casino",
-			emailConfig: `[{
-				"name": "primary",
-				"type": "smtp", 
-				"priority": 1,
-				"enabled": true,
-				"config": {
-					"Host": "smtp.sendgrid.net",
-					"Port": "465",
-					"Username": "apikey",
-					"Password": "SG.test_key_12345",
-					"SMTPAuth": "1",
-					"SMTPSecure": "ssl",
-					"MSGBonusFrom": "bonus@goodwin.am",
-					"MSGPromoFrom": "promo@goodwin.am",
-					"MSGReportFrom": "reports@goodwin.am",
-					"MSGSystemFrom": "noreply@goodwin.am",
-					"MSGPaymentFrom": "payments@goodwin.am",
-					"MSGSupportFrom": "support@goodwin.am",
-					"MSGBonusFromName": "Goodwin Bonus Team",
-					"MSGPromoFromName": "Goodwin Promotions",
-					"MSGReportFromName": "Goodwin Reports",
-					"MSGSystemFromName": "Goodwin System",
-					"MSGPaymentFromName": "Goodwin Payments",
-					"MSGSupportFromName": "Goodwin Support"
-				}
-			}]`,
-			smsConfig: `[{
-				"name": "primary",
-				"type": "twilio",
-				"priority": 1,
-				"enabled": true,
-				"config": {
-					"account_sid": "AC_test_123456789",
-					"auth_token": "test_token_123",
-					"from_number": "+1234567890"
-				}
-			}]`,
-			pushConfig: `[{
-				"name": "primary",
-				"type": "fcm",
-				"priority": 1,
-				"enabled": true,
-				"config": {
-					"server_key": "fcm_server_key_123",
-					"project_id": "goodwin-casino"
-				}
-			}]`,
-			batchConfig: `{
-				"enabled": true,
-				"max_batch_size": 100,
-				"flush_interval_seconds": 10
-			}`,
+			emailProviders: []schema.ProviderConfig{
+				{
+					Name:     "primary",
+					Type:     "smtp",
+					Priority: 1,
+					Enabled:  true,
+					Config: map[string]interface{}{
+						"Host":               "smtp.sendgrid.net",
+						"Port":               "465",
+						"Username":           "apikey",
+						"Password":           "SG.test_key_12345",
+						"SMTPAuth":           "1",
+						"SMTPSecure":         "ssl",
+						"MSGBonusFrom":       "bonus@goodwin.am",
+						"MSGPromoFrom":       "promo@goodwin.am",
+						"MSGReportFrom":      "reports@goodwin.am",
+						"MSGSystemFrom":      "noreply@goodwin.am",
+						"MSGPaymentFrom":     "payments@goodwin.am",
+						"MSGSupportFrom":     "support@goodwin.am",
+						"MSGBonusFromName":   "Goodwin Bonus Team",
+						"MSGPromoFromName":   "Goodwin Promotions",
+						"MSGReportFromName":  "Goodwin Reports",
+						"MSGSystemFromName":  "Goodwin System",
+						"MSGPaymentFromName": "Goodwin Payments",
+						"MSGSupportFromName": "Goodwin Support",
+					},
+				},
+			},
+			smsProviders: []schema.ProviderConfig{
+				{
+					Name:     "primary",
+					Type:     "twilio",
+					Priority: 1,
+					Enabled:  true,
+					Config: map[string]interface{}{
+						"account_sid": "AC_test_123456789",
+						"auth_token":  "test_token_123",
+						"from_number": "+1234567890",
+					},
+				},
+			},
+			pushProviders: []schema.ProviderConfig{
+				{
+					Name:     "primary",
+					Type:     "fcm",
+					Priority: 1,
+					Enabled:  true,
+					Config: map[string]interface{}{
+						"server_key": "fcm_server_key_123",
+						"project_id": "goodwin-casino",
+					},
+				},
+			},
+			batchConfig: &schema.BatchConfig{
+				Enabled:              true,
+				MaxBatchSize:         100,
+				FlushIntervalSeconds: 10,
+			},
+			rateLimits: map[string]schema.RateLimit{
+				"email": {Limit: 1000, Window: "1h", Strategy: "sliding"},
+				"sms":   {Limit: 500, Window: "1h", Strategy: "sliding"},
+				"push":  {Limit: 5000, Window: "1h", Strategy: "sliding"},
+			},
 			enabled: true,
 		},
 		{
 			id:       "starbet-1002",
 			tenantID: 1002,
 			name:     "StarBet",
-			emailConfig: `[{
-				"name": "primary",
-				"type": "smtp",
-				"priority": 1,
-				"enabled": true,
-				"config": {
-					"Host": "smtp.sendx.io",
-					"Port": "587",
-					"Username": "starbet@sendx.io",
-					"Password": "sendx_password_456",
-					"SMTPAuth": "1",
-					"SMTPSecure": "tls",
-					"MSGBonusFrom": "bonuses@starbet.com",
-					"MSGPromoFrom": "promotions@starbet.com",
-					"MSGSystemFrom": "system@starbet.com",
-					"MSGBonusFromName": "StarBet Bonuses",
-					"MSGPromoFromName": "StarBet Promos",
-					"MSGSystemFromName": "StarBet System"
-				}
-			}]`,
-			smsConfig:  `[]`,
-			pushConfig: `[]`,
-			batchConfig: `{
-				"enabled": true,
-				"max_batch_size": 50,
-				"flush_interval_seconds": 5
-			}`,
+			emailProviders: []schema.ProviderConfig{
+				{
+					Name:     "primary",
+					Type:     "smtp",
+					Priority: 1,
+					Enabled:  true,
+					Config: map[string]interface{}{
+						"Host":              "smtp.sendx.io",
+						"Port":              "587",
+						"Username":          "starbet@sendx.io",
+						"Password":          "sendx_password_456",
+						"SMTPAuth":          "1",
+						"SMTPSecure":        "tls",
+						"MSGBonusFrom":      "bonuses@starbet.com",
+						"MSGPromoFrom":      "promotions@starbet.com",
+						"MSGSystemFrom":     "system@starbet.com",
+						"MSGBonusFromName":  "StarBet Bonuses",
+						"MSGPromoFromName":  "StarBet Promos",
+						"MSGSystemFromName": "StarBet System",
+					},
+				},
+			},
+			smsProviders:  []schema.ProviderConfig{},
+			pushProviders: []schema.ProviderConfig{},
+			batchConfig: &schema.BatchConfig{
+				Enabled:              true,
+				MaxBatchSize:         50,
+				FlushIntervalSeconds: 5,
+			},
+			rateLimits: map[string]schema.RateLimit{
+				"email": {Limit: 500, Window: "1h", Strategy: "sliding"},
+				"sms":   {Limit: 100, Window: "1h", Strategy: "sliding"},
+				"push":  {Limit: 1000, Window: "1h", Strategy: "sliding"},
+			},
 			enabled: true,
 		},
 		{
-			id:          "luckyplay-1003",
-			tenantID:    1003,
-			name:        "LuckyPlay",
-			emailConfig: `[]`,
-			smsConfig:   `[]`,
-			pushConfig:  `[]`,
-			batchConfig: `{"enabled": false}`,
-			enabled:     false,
+			id:             "luckyplay-1003",
+			tenantID:       1003,
+			name:           "LuckyPlay",
+			emailProviders: []schema.ProviderConfig{},
+			smsProviders:   []schema.ProviderConfig{},
+			pushProviders:  []schema.ProviderConfig{},
+			batchConfig: &schema.BatchConfig{
+				Enabled: false,
+			},
+			rateLimits: map[string]schema.RateLimit{
+				"email": {Limit: 100, Window: "1h", Strategy: "sliding"},
+				"sms":   {Limit: 50, Window: "1h", Strategy: "sliding"},
+				"push":  {Limit: 200, Window: "1h", Strategy: "sliding"},
+			},
+			enabled: false,
 		},
 	}
-
-	rateLimits := `{
-		"email": {"limit": 1000, "window": "1h", "strategy": "sliding"},
-		"sms": {"limit": 500, "window": "1h", "strategy": "sliding"}, 
-		"push": {"limit": 5000, "window": "1h", "strategy": "sliding"}
-	}`
 
 	for _, config := range configs {
 		// Check if config exists
@@ -206,11 +227,11 @@ func seedPartnerConfigsSafe(ctx context.Context, client *ent.Client, logger *log
 		err := client.PartnerConfig.Create().
 			SetID(config.id).
 			SetTenantID(config.tenantID).
-			SetEmailProviders([]byte(config.emailConfig)).
-			SetSmsProviders([]byte(config.smsConfig)).
-			SetPushProviders([]byte(config.pushConfig)).
-			SetBatchConfig([]byte(config.batchConfig)).
-			SetRateLimits([]byte(rateLimits)).
+			SetEmailProviders(config.emailProviders).
+			SetSmsProviders(config.smsProviders).
+			SetPushProviders(config.pushProviders).
+			SetBatchConfig(config.batchConfig).
+			SetRateLimits(config.rateLimits).
 			SetEnabled(config.enabled).
 			Exec(ctx)
 
@@ -293,13 +314,18 @@ func createNotificationsForTenant(ctx context.Context, client *ent.Client, tenan
 			}
 
 			// Add metadata
-			create.SetMeta(&schema.NotificationMeta{
-				Service: "test-service",
-				Params: map[string]interface{}{
+			metaData := map[string]interface{}{
+				"service": "test-service",
+				"params": map[string]interface{}{
 					"message_type": "system",
 					"tenant_name":  fmt.Sprintf("tenant_%d", tenantID),
 				},
-			})
+			}
+
+			metaJSON, _ := json.Marshal(metaData)
+			var meta schema.NotificationMeta
+			json.Unmarshal(metaJSON, &meta)
+			create.SetMeta(&meta)
 
 			if err := create.Exec(ctx); err != nil {
 				logger.Errorf("Failed to create notification: %v", err)

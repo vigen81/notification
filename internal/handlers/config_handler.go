@@ -31,11 +31,11 @@ func NewConfigHandler(configRepo *repository.PartnerConfigRepository, logger *lo
 // @Tags configuration
 // @Produce json
 // @Param tenant_id path int true "Tenant ID" minimum(1)
-// @Success 200 {object} models.PartnerConfig "Configuration retrieved successfully"
-// @Failure 400 {object} models.ErrorResponse "Bad Request - Invalid tenant ID"
-// @Failure 401 {object} models.ErrorResponse "Unauthorized - Invalid or missing JWT token"
-// @Failure 404 {object} models.ErrorResponse "Not Found - Tenant configuration not found"
-// @Failure 500 {object} models.ErrorResponse "Internal Server Error - Failed to retrieve configuration"
+// @Success 200 {object} models.PartnerConfig
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
 // @Router /config/{tenant_id} [get]
 func (h *ConfigHandler) GetConfig(c *fiber.Ctx) error {
@@ -72,16 +72,16 @@ func (h *ConfigHandler) GetConfig(c *fiber.Ctx) error {
 
 // UpdateConfig updates the configuration for a specific tenant
 // @Summary Update partner configuration
-// @Description Update the complete configuration for a specific tenant. This replaces the entire configuration.
+// @Description Update the complete configuration for a specific tenant
 // @Tags configuration
 // @Accept json
 // @Produce json
 // @Param tenant_id path int true "Tenant ID" minimum(1)
 // @Param config body models.PartnerConfigRequest true "Configuration update request"
-// @Success 200 {object} models.ConfigSuccessResponse "Configuration updated successfully"
-// @Failure 400 {object} models.ErrorResponse "Bad Request - Invalid tenant ID or request body"
-// @Failure 401 {object} models.ErrorResponse "Unauthorized - Invalid or missing JWT token"
-// @Failure 500 {object} models.ErrorResponse "Internal Server Error - Failed to save configuration"
+// @Success 200 {object} models.ConfigSuccessResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
 // @Router /config/{tenant_id} [put]
 func (h *ConfigHandler) UpdateConfig(c *fiber.Ctx) error {
@@ -148,16 +148,16 @@ func (h *ConfigHandler) UpdateConfig(c *fiber.Ctx) error {
 
 // AddEmailProvider adds a new email provider to a tenant configuration
 // @Summary Add email provider
-// @Description Add a new email provider to a specific tenant configuration. Supports SMTP, SendGrid, SendX providers.
+// @Description Add a new email provider to a specific tenant configuration
 // @Tags configuration
 // @Accept json
 // @Produce json
 // @Param tenant_id path int true "Tenant ID" minimum(1)
 // @Param provider body models.AddProviderRequest true "Email provider request"
-// @Success 201 {object} models.ConfigSuccessResponse "Email provider added successfully"
-// @Failure 400 {object} models.ErrorResponse "Bad Request - Invalid tenant ID or provider configuration"
-// @Failure 401 {object} models.ErrorResponse "Unauthorized - Invalid or missing JWT token"
-// @Failure 500 {object} models.ErrorResponse "Internal Server Error - Failed to save configuration"
+// @Success 201 {object} models.ConfigSuccessResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
 // @Router /config/{tenant_id}/providers/email [post]
 func (h *ConfigHandler) AddEmailProvider(c *fiber.Ctx) error {
@@ -219,16 +219,16 @@ func (h *ConfigHandler) AddEmailProvider(c *fiber.Ctx) error {
 
 // AddSMSProvider adds a new SMS provider to a tenant configuration
 // @Summary Add SMS provider
-// @Description Add a new SMS provider to a specific tenant configuration. Supports Twilio, Nexmo providers.
+// @Description Add a new SMS provider to a specific tenant configuration
 // @Tags configuration
 // @Accept json
 // @Produce json
 // @Param tenant_id path int true "Tenant ID" minimum(1)
 // @Param provider body models.AddProviderRequest true "SMS provider request"
-// @Success 201 {object} models.ConfigSuccessResponse "SMS provider added successfully"
-// @Failure 400 {object} models.ErrorResponse "Bad Request - Invalid tenant ID or provider configuration"
-// @Failure 401 {object} models.ErrorResponse "Unauthorized - Invalid or missing JWT token"
-// @Failure 500 {object} models.ErrorResponse "Internal Server Error - Failed to save configuration"
+// @Success 201 {object} models.ConfigSuccessResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
 // @Router /config/{tenant_id}/providers/sms [post]
 func (h *ConfigHandler) AddSMSProvider(c *fiber.Ctx) error {
@@ -290,16 +290,16 @@ func (h *ConfigHandler) AddSMSProvider(c *fiber.Ctx) error {
 
 // AddPushProvider adds a new push provider to a tenant configuration
 // @Summary Add push provider
-// @Description Add a new push provider to a specific tenant configuration. Supports FCM (Firebase Cloud Messaging).
+// @Description Add a new push provider to a specific tenant configuration
 // @Tags configuration
 // @Accept json
 // @Produce json
 // @Param tenant_id path int true "Tenant ID" minimum(1)
 // @Param provider body models.AddProviderRequest true "Push provider request"
-// @Success 201 {object} models.ConfigSuccessResponse "Push provider added successfully"
-// @Failure 400 {object} models.ErrorResponse "Bad Request - Invalid tenant ID or provider configuration"
-// @Failure 401 {object} models.ErrorResponse "Unauthorized - Invalid or missing JWT token"
-// @Failure 500 {object} models.ErrorResponse "Internal Server Error - Failed to save configuration"
+// @Success 201 {object} models.ConfigSuccessResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
 // @Router /config/{tenant_id}/providers/push [post]
 func (h *ConfigHandler) AddPushProvider(c *fiber.Ctx) error {
@@ -366,11 +366,11 @@ func (h *ConfigHandler) AddPushProvider(c *fiber.Ctx) error {
 // @Param tenant_id path int true "Tenant ID" minimum(1)
 // @Param type path string true "Provider type" Enums(email,sms,push)
 // @Param name path string true "Provider name"
-// @Success 200 {object} models.ConfigSuccessResponse "Provider removed successfully"
-// @Failure 400 {object} models.ErrorResponse "Bad Request - Invalid parameters"
-// @Failure 401 {object} models.ErrorResponse "Unauthorized - Invalid or missing JWT token"
-// @Failure 404 {object} models.ErrorResponse "Not Found - Provider not found"
-// @Failure 500 {object} models.ErrorResponse "Internal Server Error - Failed to save configuration"
+// @Success 200 {object} models.ConfigSuccessResponse
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
 // @Router /config/{tenant_id}/providers/{type}/{name} [delete]
 func (h *ConfigHandler) RemoveProvider(c *fiber.Ctx) error {

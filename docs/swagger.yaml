@@ -446,52 +446,6 @@ info:
   title: Notification Engine API
   version: "1.0"
 paths:
-  /api/v1/health:
-    get:
-      description: Returns the general health status of the notification engine service.
-        Available at both /health and /api/v1/health
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Service is healthy
-          schema:
-            $ref: '#/definitions/models.HealthResponse'
-      summary: Health check
-      tags:
-      - health
-  /api/v1/live:
-    get:
-      description: Returns the liveness status of the notification engine. Available
-        at both /live and /api/v1/live
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Service is alive
-          schema:
-            $ref: '#/definitions/models.HealthResponse'
-      summary: Liveness check
-      tags:
-      - health
-  /api/v1/ready:
-    get:
-      description: Returns the readiness status of the notification engine including
-        dependency checks. Available at both /ready and /api/v1/ready
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Service is ready to accept requests
-          schema:
-            $ref: '#/definitions/models.HealthResponse'
-        "503":
-          description: Service is not ready - dependencies not available
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-      summary: Readiness check
-      tags:
-      - health
   /config/{tenant_id}:
     get:
       description: Get the complete configuration for a specific tenant including
@@ -507,23 +461,23 @@ paths:
       - application/json
       responses:
         "200":
-          description: Configuration retrieved successfully
+          description: OK
           schema:
             $ref: '#/definitions/models.PartnerConfig'
         "400":
-          description: Bad Request - Invalid tenant ID
+          description: Bad Request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized - Invalid or missing JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "404":
-          description: Not Found - Tenant configuration not found
+          description: Not Found
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error - Failed to retrieve configuration
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
@@ -534,8 +488,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update the complete configuration for a specific tenant. This replaces
-        the entire configuration.
+      description: Update the complete configuration for a specific tenant
       parameters:
       - description: Tenant ID
         in: path
@@ -553,19 +506,19 @@ paths:
       - application/json
       responses:
         "200":
-          description: Configuration updated successfully
+          description: OK
           schema:
             $ref: '#/definitions/models.ConfigSuccessResponse'
         "400":
-          description: Bad Request - Invalid tenant ID or request body
+          description: Bad Request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized - Invalid or missing JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error - Failed to save configuration
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
@@ -600,23 +553,23 @@ paths:
         type: string
       responses:
         "200":
-          description: Provider removed successfully
+          description: OK
           schema:
             $ref: '#/definitions/models.ConfigSuccessResponse'
         "400":
-          description: Bad Request - Invalid parameters
+          description: Bad Request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized - Invalid or missing JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "404":
-          description: Not Found - Provider not found
+          description: Not Found
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error - Failed to save configuration
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
@@ -628,8 +581,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Add a new email provider to a specific tenant configuration. Supports
-        SMTP, SendGrid, SendX providers.
+      description: Add a new email provider to a specific tenant configuration
       parameters:
       - description: Tenant ID
         in: path
@@ -647,19 +599,19 @@ paths:
       - application/json
       responses:
         "201":
-          description: Email provider added successfully
+          description: Created
           schema:
             $ref: '#/definitions/models.ConfigSuccessResponse'
         "400":
-          description: Bad Request - Invalid tenant ID or provider configuration
+          description: Bad Request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized - Invalid or missing JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error - Failed to save configuration
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
@@ -671,8 +623,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Add a new push provider to a specific tenant configuration. Supports
-        FCM (Firebase Cloud Messaging).
+      description: Add a new push provider to a specific tenant configuration
       parameters:
       - description: Tenant ID
         in: path
@@ -690,19 +641,19 @@ paths:
       - application/json
       responses:
         "201":
-          description: Push provider added successfully
+          description: Created
           schema:
             $ref: '#/definitions/models.ConfigSuccessResponse'
         "400":
-          description: Bad Request - Invalid tenant ID or provider configuration
+          description: Bad Request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized - Invalid or missing JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error - Failed to save configuration
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
@@ -714,8 +665,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Add a new SMS provider to a specific tenant configuration. Supports
-        Twilio, Nexmo providers.
+      description: Add a new SMS provider to a specific tenant configuration
       parameters:
       - description: Tenant ID
         in: path
@@ -733,19 +683,19 @@ paths:
       - application/json
       responses:
         "201":
-          description: SMS provider added successfully
+          description: Created
           schema:
             $ref: '#/definitions/models.ConfigSuccessResponse'
         "400":
-          description: Bad Request - Invalid tenant ID or provider configuration
+          description: Bad Request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized - Invalid or missing JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error - Failed to save configuration
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
@@ -772,7 +722,7 @@ paths:
       consumes:
       - application/json
       description: Directly publish a notification to Kafka bypassing the HTTP API
-        queue. Requires additional Kafka API key.
+        queue
       parameters:
       - description: Kafka notification request
         in: body
@@ -780,28 +730,23 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/models.KafkaNotificationRequest'
-      - description: Kafka API Key
-        in: header
-        name: X-Kafka-API-Key
-        required: true
-        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: Successfully published to Kafka
+          description: OK
           schema:
             $ref: '#/definitions/models.KafkaResponse'
         "400":
-          description: Bad Request - Invalid request body
+          description: Bad Request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized - Invalid JWT token or Kafka API key
+          description: Unauthorized
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error - Failed to publish to Kafka
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
@@ -827,8 +772,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send multiple notifications in a batch to multiple recipients.
-        Efficient for bulk operations.
+      description: Send multiple notifications in a batch to multiple recipients
       parameters:
       - description: Batch notification request
         in: body
@@ -840,19 +784,19 @@ paths:
       - application/json
       responses:
         "202":
-          description: Batch queued successfully
+          description: Accepted
           schema:
             $ref: '#/definitions/models.BatchNotificationResponse'
         "400":
-          description: Bad Request - Invalid request body or missing required fields
+          description: Bad Request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized - Invalid or missing JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error - Failed to queue batch
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
@@ -866,7 +810,6 @@ paths:
         ID
       parameters:
       - description: Batch ID
-        format: uuid
         in: path
         name: batch_id
         required: true
@@ -875,19 +818,15 @@ paths:
       - application/json
       responses:
         "200":
-          description: Batch status retrieved successfully
+          description: OK
           schema:
             $ref: '#/definitions/models.BatchNotificationStatusResponse'
         "400":
-          description: Bad Request - Invalid batch ID format
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-        "401":
-          description: Unauthorized - Invalid or missing JWT token
+          description: Bad Request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "404":
-          description: Not Found - Batch not found
+          description: Not Found
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
@@ -912,19 +851,19 @@ paths:
       - application/json
       responses:
         "202":
-          description: Notification queued successfully
+          description: Accepted
           schema:
             $ref: '#/definitions/models.NotificationResponse'
         "400":
-          description: Bad Request - Invalid request body or missing required fields
+          description: Bad Request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Unauthorized - Invalid or missing JWT token
+          description: Unauthorized
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error - Failed to queue notification
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
@@ -938,7 +877,6 @@ paths:
         ID
       parameters:
       - description: Request ID
-        format: uuid
         in: path
         name: request_id
         required: true
@@ -947,19 +885,15 @@ paths:
       - application/json
       responses:
         "200":
-          description: Notification status retrieved successfully
+          description: OK
           schema:
             $ref: '#/definitions/models.NotificationStatusResponse'
         "400":
-          description: Bad Request - Invalid request ID format
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-        "401":
-          description: Unauthorized - Invalid or missing JWT token
+          description: Bad Request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "404":
-          description: Not Found - Notification not found
+          description: Not Found
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
