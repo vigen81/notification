@@ -40,6 +40,14 @@ func NewProviderRegistry() *ProviderRegistry {
 		return provider, nil
 	})
 
+	registry.RegisterSMSProvider("custom", func(config map[string]interface{}) (SMSProvider, error) {
+		provider, err := sms.NewCustomProvider(config)
+		if err != nil {
+			return nil, err
+		}
+		return provider, nil
+	})
+
 	// TODO: Register push providers when implemented
 	// registry.RegisterPushProvider("fcm", func(config map[string]interface{}) (PushProvider, error) {
 	//     provider, err := push.NewFCMProvider(config)
