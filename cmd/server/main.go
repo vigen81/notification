@@ -79,10 +79,11 @@ import (
 // @tag.description Health and readiness checks
 
 func main() {
+	serviceName := "notification-engine"
+
 	fx.New(
-		// Configuration
-		fx.Provide(func() (*config.Config, error) {
-			return config.NewConfig()
+		fx.Provide(func(lifecycle fx.Lifecycle) (*config.Config, error) {
+			return config.Provider(lifecycle, serviceName)
 		}),
 		fx.Provide(func() *logrus.Logger {
 			return logger.NewLogger()
@@ -136,8 +137,13 @@ func main() {
 		) *services.NotificationService {
 			return services.NewNotificationService(notifRepo, configRepo, emailManager, smsManager, logger)
 		}),
-
-		// Replace BatchService with BufferedNotificationService
+		fx.Provide(func(
+			notificationSvc *services.NotificationService,
+			configRepo *repository.PartnerConfigRepository,
+			logger *logrus.Logger,
+		) *services.BatchService {
+			return services.NewBatchService(notificationSvc, configRepo, logger)
+		}),
 		fx.Provide(func(
 			notificationSvc *services.NotificationService,
 			configRepo *repository.PartnerConfigRepository,
@@ -161,11 +167,11 @@ func main() {
 			return handlers.NewHealthHandler(logger)
 		}),
 
-		// Workers - Updated to use BufferedNotificationService
+		// Workers
 		fx.Provide(func(
 			subscriber *kafka.Subscriber,
 			notifRepo *repository.NotificationRepository,
-			bufferedSvc *services.BufferedNotificationService, // Changed from batchSvc
+			bufferedSvc *services.BufferedNotificationService,
 			logger *logrus.Logger,
 		) *workers.NotificationWorker {
 			return workers.NewNotificationWorker(subscriber, notifRepo, bufferedSvc, logger)
