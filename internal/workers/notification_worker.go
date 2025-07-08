@@ -15,44 +15,47 @@ import (
 )
 
 type NotificationWorker struct {
-	subscriber      *kafka.Subscriber
-	notifRepo       *repository.NotificationRepository
-	notificationSvc *services.NotificationService
-	batchSvc        *services.BatchService
-	logger          *logrus.Logger
-	stopChan        chan struct{}
+	subscriber  *kafka.Subscriber
+	notifRepo   *repository.NotificationRepository
+	bufferedSvc *services.BufferedNotificationService // Use buffered service
+	logger      *logrus.Logger
+	stopChan    chan struct{}
 }
 
 func NewNotificationWorker(
 	subscriber *kafka.Subscriber,
 	notifRepo *repository.NotificationRepository,
-	notificationSvc *services.NotificationService,
-	batchSvc *services.BatchService,
+	bufferedSvc *services.BufferedNotificationService,
 	logger *logrus.Logger,
 ) *NotificationWorker {
 	return &NotificationWorker{
-		subscriber:      subscriber,
-		notifRepo:       notifRepo,
-		notificationSvc: notificationSvc,
-		batchSvc:        batchSvc,
-		logger:          logger,
-		stopChan:        make(chan struct{}),
+		subscriber:  subscriber,
+		notifRepo:   notifRepo,
+		bufferedSvc: bufferedSvc,
+		logger:      logger,
+		stopChan:    make(chan struct{}),
 	}
 }
 
 func (w *NotificationWorker) Start(ctx context.Context) error {
+	// Use existing Kafka subscription - no changes needed here!
 	messages, err := w.subscriber.Subscribe(ctx, "notifications")
 	if err != nil {
 		return fmt.Errorf("failed to subscribe to notifications topic: %w", err)
 	}
 
+	if err := w.bufferedSvc.Start(); err != nil {
+		return fmt.Errorf("failed to start buffered service: %w", err)
+	}
+
 	go w.processMessages(ctx, messages)
 
-	w.logger.Info("Notification worker started")
+	w.logger.Info("Notification worker started with buffering")
 	return nil
 }
 
 func (w *NotificationWorker) Stop() {
+	w.bufferedSvc.Stop()
 	close(w.stopChan)
 }
 
@@ -78,7 +81,7 @@ func (w *NotificationWorker) processMessages(ctx context.Context, messages <-cha
 				w.logger.WithFields(logrus.Fields{
 					"message_id": msg.UUID,
 					"duration":   time.Since(startTime),
-				}).Info("Message processed successfully")
+				}).Debug("Message processed successfully")
 				msg.Ack()
 			}
 		default:
@@ -93,15 +96,6 @@ func (w *NotificationWorker) processMessage(ctx context.Context, msg *message.Me
 		return fmt.Errorf("failed to unmarshal notification request: %w", err)
 	}
 
-	w.logger.WithFields(logrus.Fields{
-		"request_id": req.RequestID,
-		"tenant_id":  req.TenantID,
-		"type":       req.Type,
-		"recipients": len(req.Recipients),
-		"scheduled":  req.ScheduleTS != nil,
-	}).Info("Processing notification request")
-
-	// REMOVED THE EARLY RETURN - Let the service handle ALL logic
-	// The NotificationService will store in DB and decide whether to send immediately or schedule
-	return w.notificationSvc.ProcessNotification(ctx, &req)
+	// Simply pass to buffered service - it will decide whether to buffer or process immediately
+	return w.bufferedSvc.ProcessNotification(ctx, &req)
 }

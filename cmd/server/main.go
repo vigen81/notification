@@ -136,12 +136,14 @@ func main() {
 		) *services.NotificationService {
 			return services.NewNotificationService(notifRepo, configRepo, emailManager, smsManager, logger)
 		}),
+
+		// Replace BatchService with BufferedNotificationService
 		fx.Provide(func(
 			notificationSvc *services.NotificationService,
 			configRepo *repository.PartnerConfigRepository,
 			logger *logrus.Logger,
-		) *services.BatchService {
-			return services.NewBatchService(notificationSvc, configRepo, logger)
+		) *services.BufferedNotificationService {
+			return services.NewBufferedNotificationService(notificationSvc, configRepo, logger)
 		}),
 
 		// Handlers
@@ -159,15 +161,14 @@ func main() {
 			return handlers.NewHealthHandler(logger)
 		}),
 
-		// Workers
+		// Workers - Updated to use BufferedNotificationService
 		fx.Provide(func(
 			subscriber *kafka.Subscriber,
 			notifRepo *repository.NotificationRepository,
-			notificationSvc *services.NotificationService,
-			batchSvc *services.BatchService,
+			bufferedSvc *services.BufferedNotificationService, // Changed from batchSvc
 			logger *logrus.Logger,
 		) *workers.NotificationWorker {
-			return workers.NewNotificationWorker(subscriber, notifRepo, notificationSvc, batchSvc, logger)
+			return workers.NewNotificationWorker(subscriber, notifRepo, bufferedSvc, logger)
 		}),
 		fx.Provide(func(
 			notifRepo *repository.NotificationRepository,

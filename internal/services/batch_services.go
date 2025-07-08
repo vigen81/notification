@@ -114,7 +114,10 @@ func (s *BatchService) processBatches() {
 		for batchKey, batch := range s.batches {
 			// Flush batches older than configured interval
 			if now.Sub(batch.LastAddedAt) > 30*time.Second {
-				s.flushBatch(context.Background(), batchKey)
+				err := s.flushBatch(context.Background(), batchKey)
+				if err != nil {
+					return
+				}
 			}
 		}
 
