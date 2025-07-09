@@ -17,7 +17,7 @@ include:
 build:
   stage: build
   rules:
-    - if: '$CI_COMMIT_BRANCH  == "development"'
+    - if: '$CI_COMMIT_BRANCH  == "notification-engine"'
       variables:
         DOCKER_REPOSITORY: "golang-notification-dev"
       when: always
@@ -28,7 +28,7 @@ dev:migration:
   needs:
     - build
   rules:
-    - if: '$CI_COMMIT_BRANCH  == "development"'
+    - if: '$CI_COMMIT_BRANCH  == "notification-engine"'
       variables:
         DOCKER_REPOSITORY: "golang-notification-dev"
       when: always
@@ -39,7 +39,7 @@ dev:deploy:
   needs:
     - dev:migration
   only:
-    - development
+    - notification-engine
 
 # prod:migration:
 #   stage: migration
