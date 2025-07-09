@@ -1,91 +1,58 @@
-# This file is a template, and might need editing before it works on your project.
-# To contribute improvements to CI/CD templates, please follow the Development guide at:
-# https://docs.gitlab.com/ee/development/cicd/templates.html
-# This specific template is located at:
-# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Docker.gitlab-ci.yml
+variables:
+  HELM_PATH: helm-live/base/apps/golang-notification/api
 
-# Build a Docker image with CI/CD and push to the GitLab registry.
-# Docker-in-Docker documentation: https://docs.gitlab.com/ee/ci/docker/using_docker_build.html
-#
-# This template uses one generic job with conditional builds
-# for the default branch and all other (MR) branches.
 stages:
   - build
-  - deploy-dev
-  - deploy-prod
+  - migration
+  - deploy
+
+include:
+  - project: 'devops/templates-live'
+    ref: 'main'
+    file:
+      - 'arm-build-ci.yml'
+      - 'arm-migration-ci.yml'
+      - 'arm-deploy-ci.yml'
 
 build:
-  # Use the official docker image.
-  image: docker:latest
   stage: build
-  variables:
-    BOOT_USER: $BOOT_USER
-    BOOT_TOKEN: $BOOT_TOKEN
-  services:
-    - docker:dind
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-  # Default branch leaves tag empty (= latest tag)
-  # All other branches are tagged with the escaped branch name (commit ref slug)
-  script:
-    - |
-      tag="$CI_COMMIT_SHORT_SHA"
-      echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
-    -  |
-      echo $BOOT_USER $BOOT_TOKEN
-      echo "$CI_COMMIT_BRANCH" $CI_COMMIT_BRANCH
-    - docker build --build-arg gitlab_user="$BOOT_USER" --build-arg gitlab_personal_token="$BOOT_TOKEN" --pull -t "$CI_REGISTRY_IMAGE:${tag}" .
-    - docker push "$CI_REGISTRY_IMAGE:${tag}"
-  # Run this job in a branch where a Dockerfile exists
-  only:
-    - master
-    - dev
+  rules:
+    - if: '$CI_COMMIT_BRANCH  == "development"'
+      variables:
+        DOCKER_REPOSITORY: "golang-notification-dev"
+      when: always
+    - when: never
 
-deploy-dev:
-  stage: deploy-dev
-  image: alpine:latest
-  variables:
-    NS: base/golang
-  before_script:
-    - apk add --no-cache git curl bash yq
-    - mkdir -p /code/data
-    - cd /code/data
-    - git clone https://${CI_USERNAME}:${CI_PUSH_TOKEN}@gitlab.com/healthcare-integration/helm.git ./
-    - git config --global user.email "gitlab@gitlab.com"
-    - git config --global user.name "GitLab CI/CD"
-    - git fetch
-    - git switch master
-    - git reset --hard origin/master
-    - git pull origin master
-  script:
-    - cd ${NS}/${CI_PROJECT_NAME}
-    - yq -i '.image.tag = "'${CI_COMMIT_SHORT_SHA}'"' values-dev.yaml
-    - git commit -am '[skip ci] ${ENV} image update'
-    - git push origin master
-  only:
-    - dev
+dev:migration:
+  stage: migration
+  needs:
+    - build
+  rules:
+    - if: '$CI_COMMIT_BRANCH  == "development"'
+      variables:
+        DOCKER_REPOSITORY: "golang-notification-dev"
+      when: always
+    - when: never
 
-
-deploy-prod:
-  stage: deploy-prod
-  image: alpine:latest
-  variables:
-    NS: base/golang
-  before_script:
-    - apk add --no-cache git curl bash yq
-    - mkdir -p /code/data
-    - cd /code/data
-    - git clone https://${CI_USERNAME}:${CI_PUSH_TOKEN}@gitlab.com/healthcare-integration/helm.git ./
-    - git config --global user.email "gitlab@gitlab.com"
-    - git config --global user.name "GitLab CI/CD"
-    - git fetch
-    - git switch master
-    - git reset --hard origin/master
-    - git pull origin master
-  script:
-    - cd ${NS}/${CI_PROJECT_NAME}
-    - yq -i '.image.tag = "'${CI_COMMIT_SHORT_SHA}'"' values-prod.yaml
-    - git commit -am '[skip ci] ${ENV} image update'
-    - git push origin master
+dev:deploy:
+  stage: deploy
+  needs:
+    - dev:migration
   only:
-    - master
+    - development
+
+# prod:migration:
+#   stage: migration
+#   when: manual
+#   needs:
+#     - build
+#   only:
+#     - main
+
+# prod:deploy:
+#   stage: deploy
+#   when: manual
+#   needs:
+#     - prod:migration
+#   only:
+#     - main
