@@ -1,3 +1,4 @@
+// File: cmd/server/main.go
 package main
 
 import (
@@ -17,7 +18,7 @@ import (
 	"gitlab.smartbet.am/golang/notification/internal/services"
 	"gitlab.smartbet.am/golang/notification/internal/workers"
 
-	// Import generated docs for Swagger
+	// Import generated docs for Swagger (generated during build)
 	_ "gitlab.smartbet.am/golang/notification/docs"
 
 	"go.uber.org/fx"

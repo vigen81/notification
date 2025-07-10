@@ -22,10 +22,19 @@ build: deps generate ## Build the application
 	go build -o bin/notification-engine ./cmd/server
 
 migrate: ## Run database migrations
-	go run ./cmd/migrate
+	POD_ENV=local go run ./cmd/migrate
 
-run: generate ## Run the application
-	go run ./cmd/server
+run: generate ## Run the application (local development)
+	@if [ ! -f docs/docs.go ]; then echo "📝 Generating Swagger docs..."; swag init -g cmd/server/main.go -o docs/ || echo "⚠️ Swagger generation failed, continuing..."; fi
+	POD_ENV=local go run ./cmd/server
+
+run-dev: generate ## Run the application (dev environment - uses AWS Parameter Store)
+	@if [ ! -f docs/docs.go ]; then echo "📝 Generating Swagger docs..."; swag init -g cmd/server/main.go -o docs/ || echo "⚠️ Swagger generation failed, continuing..."; fi
+	POD_ENV=dev go run ./cmd/server
+
+run-prod: generate ## Run the application (prod environment - uses AWS Parameter Store)
+	@if [ ! -f docs/docs.go ]; then echo "📝 Generating Swagger docs..."; swag init -g cmd/server/main.go -o docs/ || echo "⚠️ Swagger generation failed, continuing..."; fi
+	POD_ENV=prod go run ./cmd/server
 
 test: ## Run tests
 	go test -v ./...
@@ -39,8 +48,38 @@ test-coverage: ## Run tests with coverage
 docker-build: ## Build Docker image
 	docker build -t notification-engine:latest .
 
-docker-run: ## Run with Docker Compose
-	docker-compose up -d
+docker-build-dev: ## Build Docker image for dev environment
+	docker build -t notification-engine:dev .
+
+docker-build-prod: ## Build Docker image for production
+	docker build -t notification-engine:prod .
+
+docker-run: ## Run with Docker Compose (local environment)
+	@echo "🚀 Starting Docker Compose..."
+	@if docker network ls | grep -q notification_default; then \
+		echo "🔄 Recreating Docker network..."; \
+		docker-compose down -v; \
+		docker network rm notification_default || true; \
+	fi
+	POD_ENV=local docker-compose up -d
+
+docker-run-dev: ## Run with Docker Compose (dev environment)
+	@echo "🚀 Starting Docker Compose (dev)..."
+	@if docker network ls | grep -q notification_default; then \
+		echo "🔄 Recreating Docker network..."; \
+		docker-compose down -v; \
+		docker network rm notification_default || true; \
+	fi
+	POD_ENV=dev docker-compose up -d
+
+docker-run-prod: ## Run with Docker Compose (prod environment)
+	@echo "🚀 Starting Docker Compose (prod)..."
+	@if docker network ls | grep -q notification_default; then \
+		echo "🔄 Recreating Docker network..."; \
+		docker-compose down -v; \
+		docker network rm notification_default || true; \
+	fi
+	POD_ENV=prod docker-compose up -d
 
 docker-down: ## Stop Docker Compose
 	docker-compose down
@@ -56,6 +95,54 @@ db-reset: ## Reset database (WARNING: This will delete all data)
 	sleep 10
 	make migrate
 
+##@ AWS Parameter Store
+
+aws-create-dev-config: ## Create development configuration in AWS Parameter Store
+	@echo "Creating development configuration in Parameter Store..."
+	aws ssm put-parameter \
+		--name "/dev/notification-engine" \
+		--value "$$(cat scripts/dev-config.json)" \
+		--type "SecureString" \
+		--description "Notification Engine Development Configuration" \
+		--overwrite
+
+aws-create-prod-config: ## Create production configuration in AWS Parameter Store
+	@echo "Creating production configuration in Parameter Store..."
+	aws ssm put-parameter \
+		--name "/prod/notification-engine" \
+		--value "$$(cat scripts/prod-config.json)" \
+		--type "SecureString" \
+		--description "Notification Engine Production Configuration" \
+		--overwrite
+
+aws-get-dev-config: ## Get development configuration from AWS Parameter Store
+	aws ssm get-parameter \
+		--name "/dev/notification-engine" \
+		--with-decryption \
+		--query "Parameter.Value" \
+		--output text | jq .
+
+aws-get-prod-config: ## Get production configuration from AWS Parameter Store
+	aws ssm get-parameter \
+		--name "/prod/notification-engine" \
+		--with-decryption \
+		--query "Parameter.Value" \
+		--output text | jq .
+
+aws-update-dev-config: ## Update development configuration in AWS Parameter Store
+	aws ssm put-parameter \
+		--name "/dev/notification-engine" \
+		--value "$$(cat scripts/dev-config.json)" \
+		--type "SecureString" \
+		--overwrite
+
+aws-update-prod-config: ## Update production configuration in AWS Parameter Store
+	aws ssm put-parameter \
+		--name "/prod/notification-engine" \
+		--value "$$(cat scripts/prod-config.json)" \
+		--type "SecureString" \
+		--overwrite
+
 ##@ Cleanup
 
 clean: ## Clean build artifacts
@@ -64,8 +151,15 @@ clean: ## Clean build artifacts
 	rm -f coverage.out coverage.html
 
 clean-docker: ## Clean Docker containers and volumes
-	docker-compose down -v
+	@echo "🧹 Cleaning Docker resources..."
+	docker-compose down -v || true
+	docker network rm notification_default || true
 	docker system prune -f
+
+docker-reset: clean-docker ## Reset Docker environment completely
+	@echo "🔄 Resetting Docker environment..."
+	docker network prune -f
+	docker volume prune -f
 
 ##@ Quality
 
@@ -107,102 +201,71 @@ kafka-console: ## Open Kafka console consumer
 api-health: ## Test health endpoint
 	curl -X GET http://localhost:8080/health
 
-api-send: ## Test send notification endpoint (requires global token)
+api-send: ## Test send notification endpoint (requires auth token)
 	curl -X POST http://localhost:8080/api/v1/notifications/send \
-		-H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
+		-H "Authorization: Bearer test-token" \
 		-H "Content-Type: application/json" \
 		-d '{"tenant_id":1001,"type":"EMAIL","recipients":["test@example.com"],"body":"Test message","message_type":"system"}'
 
 api-send-sms: ## Test SMS notification for tenant 1001
 	curl -X POST http://localhost:8080/api/v1/notifications/send \
-		-H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
+		-H "Authorization: Bearer test-token" \
 		-H "Content-Type: application/json" \
 		-d '{"tenant_id":1001,"type":"SMS","recipients":["+1234567890"],"body":"Test SMS message","message_type":"system"}'
 
 api-batch: ## Test batch notification endpoint
 	curl -X POST http://localhost:8080/api/v1/notifications/batch \
-		-H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
+		-H "Authorization: Bearer test-token" \
 		-H "Content-Type: application/json" \
 		-d '{"tenant_id":1001,"type":"EMAIL","recipients":["user1@example.com","user2@example.com"],"body":"Batch test message","message_type":"promo"}'
 
 api-config-get: ## Get configuration for tenant 1001
 	curl -X GET http://localhost:8080/api/v1/config/1001 \
-		-H "Authorization: Bearer YOUR_GLOBAL_TOKEN"
-
-api-config-get-1002: ## Get configuration for tenant 1002
-	curl -X GET http://localhost:8080/api/v1/config/1002 \
-		-H "Authorization: Bearer YOUR_GLOBAL_TOKEN"
+		-H "Authorization: Bearer test-token"
 
 api-config-update: ## Test config update for tenant 1001
 	curl -X PUT http://localhost:8080/api/v1/config/1001 \
-		-H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
+		-H "Authorization: Bearer test-token" \
 		-H "Content-Type: application/json" \
 		-d '{"email_providers":[{"name":"test","type":"smtp","priority":1,"enabled":true,"config":{"Host":"smtp.example.com"}}],"enabled":true}'
-
-api-add-email-provider: ## Add email provider to tenant 1001
-	curl -X POST http://localhost:8080/api/v1/config/1001/providers/email \
-		-H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
-		-H "Content-Type: application/json" \
-		-d '{"name":"secondary","type":"smtp","priority":2,"enabled":true,"config":{"Host":"smtp2.example.com","Port":"587","Username":"user","Password":"pass"}}'
-
-api-add-sms-provider: ## Add SMS provider to tenant 1001
-	curl -X POST http://localhost:8080/api/v1/config/1001/providers/sms \
-		-H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
-		-H "Content-Type: application/json" \
-		-d '{"name":"twilio_backup","type":"twilio","priority":2,"enabled":true,"config":{"account_sid":"AC123","auth_token":"token123","from_number":"+1234567890"}}'
-
-api-remove-provider: ## Remove email provider from tenant 1001
-	curl -X DELETE http://localhost:8080/api/v1/config/1001/providers/email/secondary \
-		-H "Authorization: Bearer YOUR_GLOBAL_TOKEN"
-
-api-kafka-publish: ## Test direct Kafka publishing
-	curl -X POST http://localhost:8080/api/v1/kafka/publish \
-		-H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
-		-H "X-Kafka-API-Key: YOUR_KAFKA_KEY" \
-		-H "Content-Type: application/json" \
-		-d '{"tenant_id":1001,"type":"EMAIL","recipients":["kafka@example.com"],"body":"Direct Kafka test","message_type":"system"}'
-
-api-status: ## Check notification status (replace with actual request_id)
-	curl -X GET http://localhost:8080/api/v1/notifications/status/550e8400-e29b-41d4-a716-446655440000 \
-		-H "Authorization: Bearer YOUR_GLOBAL_TOKEN"
 
 api-docs: ## Open API documentation
 	open http://localhost:8080/swagger/
 
-##@ Multi-tenant Testing
+##@ Environment Testing
 
-api-test-all-tenants: ## Test notifications for all seeded tenants
-	@echo "Testing tenant 1001 (Goodwin Casino)..."
-	curl -s -X POST http://localhost:8080/api/v1/notifications/send \
-		-H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
-		-H "Content-Type: application/json" \
-		-d '{"tenant_id":1001,"type":"EMAIL","recipients":["goodwin@example.com"],"body":"Test for Goodwin","message_type":"bonus"}' | jq .
-	@echo "\nTesting tenant 1002 (StarBet)..."
-	curl -s -X POST http://localhost:8080/api/v1/notifications/send \
-		-H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
-		-H "Content-Type: application/json" \
-		-d '{"tenant_id":1002,"type":"EMAIL","recipients":["starbet@example.com"],"body":"Test for StarBet","message_type":"promo"}' | jq .
+test-local: ## Test with local configuration
+	POD_ENV=local make api-health
 
-api-configs-all: ## Get configurations for all tenants
-	@echo "=== Tenant 1001 (Goodwin Casino) ==="
-	curl -s -X GET http://localhost:8080/api/v1/config/1001 -H "Authorization: Bearer YOUR_GLOBAL_TOKEN" | jq .
-	@echo "\n=== Tenant 1002 (StarBet) ==="
-	curl -s -X GET http://localhost:8080/api/v1/config/1002 -H "Authorization: Bearer YOUR_GLOBAL_TOKEN" | jq .
-	@echo "\n=== Tenant 1003 (LuckyPlay) ==="
-	curl -s -X GET http://localhost:8080/api/v1/config/1003 -H "Authorization: Bearer YOUR_GLOBAL_TOKEN" | jq .
+test-dev: ## Test with dev configuration (requires AWS access)
+	POD_ENV=dev make api-health
+
+test-prod: ## Test with prod configuration (requires AWS access)
+	POD_ENV=prod make api-health
 
 ##@ Production
 
 prod-build: ## Build for production
 	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/notification-engine ./cmd/server
 
-deploy: prod-build docker-build ## Deploy to production (customize as needed)
-	@echo "Deploying to production..."
+deploy-dev: prod-build docker-build-dev ## Deploy to development
+	@echo "Deploying to development environment..."
+	# Add your deployment commands here
+
+deploy-prod: prod-build docker-build-prod ## Deploy to production
+	@echo "Deploying to production environment..."
 	# Add your deployment commands here
 
 seed: ## Seed database with test data
-	go run ./cmd/seed
+	POD_ENV=local go run ./cmd/seed
 
 seed-fresh: ## Reset and seed database with fresh test data
 	make migrate
 	make seed
+
+##@ Configuration Templates
+
+create-config-templates: ## Create configuration template files
+	mkdir -p scripts
+	@echo "Creating configuration templates..."
+	@echo "Check scripts/ directory for config templates"

@@ -1,2 +1,65 @@
+# Git
+.git
 .gitignore
-Dockerfile
+
+# Documentation
+README.md
+*.md
+
+# Build artifacts
+bin/
+dist/
+build/
+tmp/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test files
+*_test.go
+coverage.out
+coverage.html
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# CI/CD
+.github/
+
+# Environment
+.env*
+
+# Temporary files
+tmp/
+temp/
+
+# Air config
+.air.toml
+
+# Configuration files (no longer needed with Parameter Store)
+config/
+config.yaml
+config.json
+
+# AWS credentials (should never be in image)
+.aws/
+credentials
+aws-credentials*
+
+# Generated swagger files will be created during build
+# docs/docs.go
+# docs/swagger.json
+# docs/swagger.yaml
