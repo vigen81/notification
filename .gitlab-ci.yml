@@ -7,7 +7,7 @@ stages:
   - deploy
 
 include:
-  - project: 'devops/templates-live'
+  - project: 'devops/templates'
     ref: 'main'
     file:
       - 'arm-build-ci.yml'
