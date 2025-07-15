@@ -1,0 +1,58 @@
+{
+  "server": {
+    "port": ":8080",
+    "read_timeout": "15s",
+    "write_timeout": "15s",
+    "idle_timeout": "120s"
+  },
+  "database": {
+    "host": "dev-aurora-cluster.cluster-abc123.eu-central-1.rds.amazonaws.com",
+    "port": "3306",
+    "user": "notification_user",
+    "password": "dev-secure-password-here",
+    "database": "notification_db",
+    "max_open_conns": 25,
+    "max_idle_conns": 25,
+    "conn_max_lifetime": 300
+  },
+  "kafka": {
+    "brokers": ["dev-kafka-1.amazonaws.com:9092", "dev-kafka-2.amazonaws.com:9092"],
+    "consumer_group": "notification-engine-dev",
+    "topics": {
+      "notifications": "notifications-dev",
+      "events": "notification-events-dev",
+      "dead_letter": "notifications-dlq-dev"
+    }
+  },
+  "providers": {
+    "sendgrid": {
+      "sandbox_mode": true
+    },
+    "twilio": {
+      "edge_location": "sydney"
+    },
+    "fcm": {
+      "validate_only": true
+    }
+  },
+  "batch_defaults": {
+    "max_batch_size": 50,
+    "flush_interval": "30s",
+    "max_retries": 3,
+    "retry_backoff": "5s"
+  },
+  "swagger": {
+    "enabled": true,
+    "host": "dev-api.yourcompany.com",
+    "title": "Notification Engine API - Development",
+    "version": "1.0"
+  },
+  "logging": {
+    "graylog_addr": "dev-graylog.yourcompany.com:12201",
+    "service_name": "notification-engine-dev"
+  },
+  "auth": {
+    "jwt_secret": "dev-notification-engine-jwt-secret-a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+    "kafka_api_key": "dev-kafka-api-key-x1y2z3a4b5c6d7e8f9g0h1i2j3k4l5m6"
+  }
+}

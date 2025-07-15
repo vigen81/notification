@@ -1,6 +1,7 @@
+# Updated Dockerfile for AWS Parameter Store Configuration
 FROM golang:1.24.4-alpine AS builder
 
-# Install dependencies
+# Install dependencies including Git and build tools
 RUN apk add --no-cache git ca-certificates tzdata
 
 WORKDIR /app
@@ -8,19 +9,25 @@ WORKDIR /app
 # Copy go mod files first
 COPY go.mod go.sum ./
 
-# Download initial dependencies
+# Download dependencies
 RUN go mod download
+
+# Install swag for swagger generation
+RUN go install github.com/swaggo/swag/cmd/swag@latest
 
 # Copy source code
 COPY . .
 
-# Tidy modules after copying source (this will add any missing dependencies)
-RUN go mod tidy
-
-# Generate Ent code (this might add more dependencies)
+# Generate Ent code first
 RUN go generate ./ent
 
-# Tidy again after generation to ensure all dependencies are included
+# Create empty docs package to satisfy import
+RUN mkdir -p docs && echo "package docs" > docs/docs.go
+
+# Generate Swagger docs (this will overwrite the empty docs.go)
+RUN swag init -g cmd/server/main.go -o docs/
+
+# Tidy modules after all generation
 RUN go mod tidy
 
 # Build the application
@@ -35,9 +42,6 @@ WORKDIR /app
 # Copy binary from builder
 COPY --from=builder /app/notification-engine .
 
-# Copy config files
-COPY --from=builder /app/config ./config
-
 # Create non-root user
 RUN addgroup -g 1001 -S notifier && \
     adduser -S notifier -u 1001 -G notifier
@@ -45,6 +49,9 @@ RUN addgroup -g 1001 -S notifier && \
 USER notifier
 
 EXPOSE 8080
+
+# Environment variables for AWS Parameter Store
+ENV AWS_REGION=eu-central-1
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1

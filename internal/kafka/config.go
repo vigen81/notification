@@ -5,14 +5,14 @@ import (
 )
 
 type KafkaConfig struct {
-	Brokers []string
-	Topics  Topics
+	Brokers []string `json:"brokers"`
+	Topics  Topics   `json:"topics"`
 }
 
 type Topics struct {
-	Notifications string
-	Events        string
-	DeadLetter    string
+	Notifications string `json:"notifications"`
+	Events        string `json:"events"`
+	DeadLetter    string `json:"dead_letter"`
 }
 
 func NewKafkaConfig(cfg *config.Config) *KafkaConfig {

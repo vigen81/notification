@@ -33,9 +33,9 @@ func NewFiberServer(
 	logger *logrus.Logger,
 ) *FiberServer {
 	app := fiber.New(fiber.Config{
-		ReadTimeout:  config.Server.ReadTimeout,
-		WriteTimeout: config.Server.WriteTimeout,
-		IdleTimeout:  config.Server.IdleTimeout,
+		ReadTimeout:  config.GetServerReadTimeout(),
+		WriteTimeout: config.GetServerWriteTimeout(),
+		IdleTimeout:  config.GetServerIdleTimeout(),
 		ErrorHandler: customErrorHandler,
 	})
 
@@ -75,9 +75,9 @@ func (s *FiberServer) setupRoutes() {
 		s.app.Get("/swagger/*", swagger.HandlerDefault)
 	}
 
-	// API v1 routes - Apply global authentication
+	// API v1 routes - Apply global authentication with config
 	v1 := s.app.Group("/api/v1")
-	//v1.Use(middleware.AuthMiddleware()) // Global auth - no tenant restriction
+	v1.Use(middleware.AuthMiddleware(s.config)) // Pass config to middleware
 
 	// Health endpoints also under /api/v1 for consistency with Swagger docs
 	v1.Get("/health", s.healthHandler.HealthCheck)
@@ -102,7 +102,7 @@ func (s *FiberServer) setupRoutes() {
 
 	// Kafka API endpoints (for direct Kafka publishing)
 	kafkaAPI := v1.Group("/kafka")
-	kafkaAPI.Use(middleware.KafkaAuthMiddleware()) // Additional security for Kafka endpoints
+	kafkaAPI.Use(middleware.KafkaAuthMiddleware(s.config)) // Pass config to middleware
 	kafkaAPI.Post("/publish", s.notifHandler.PublishToKafka)
 
 	// Add a catch-all route for undefined endpoints

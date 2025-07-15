@@ -1,0 +1,58 @@
+{
+  "server": {
+    "port": ":8080",
+    "read_timeout": "20s",
+    "write_timeout": "20s",
+    "idle_timeout": "120s"
+  },
+  "database": {
+    "host": "staging-aurora-cluster.cluster-def456.eu-central-1.rds.amazonaws.com",
+    "port": "3306",
+    "user": "notification_user",
+    "password": "staging-secure-password-here",
+    "database": "notification_db",
+    "max_open_conns": 35,
+    "max_idle_conns": 25,
+    "conn_max_lifetime": 300
+  },
+  "kafka": {
+    "brokers": ["staging-kafka-1.amazonaws.com:9092", "staging-kafka-2.amazonaws.com:9092"],
+    "consumer_group": "notification-engine-staging",
+    "topics": {
+      "notifications": "notifications-staging",
+      "events": "notification-events-staging",
+      "dead_letter": "notifications-dlq-staging"
+    }
+  },
+  "providers": {
+    "sendgrid": {
+      "sandbox_mode": true
+    },
+    "twilio": {
+      "edge_location": "sydney"
+    },
+    "fcm": {
+      "validate_only": true
+    }
+  },
+  "batch_defaults": {
+    "max_batch_size": 75,
+    "flush_interval": "15s",
+    "max_retries": 3,
+    "retry_backoff": "5s"
+  },
+  "swagger": {
+    "enabled": true,
+    "host": "staging-api.yourcompany.com",
+    "title": "Notification Engine API - Staging",
+    "version": "1.0"
+  },
+  "logging": {
+    "graylog_addr": "staging-graylog.yourcompany.com:12201",
+    "service_name": "notification-engine-staging"
+  },
+  "auth": {
+    "jwt_secret": "staging-notification-engine-jwt-secret-q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6j7k8l9",
+    "kafka_api_key": "staging-kafka-api-key-z1x2c3v4b5n6m7q8w9e0r1t2y3u4i5o6p7"
+  }
+}

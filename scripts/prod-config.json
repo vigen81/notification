@@ -1,0 +1,62 @@
+{
+  "server": {
+    "port": ":8080",
+    "read_timeout": "30s",
+    "write_timeout": "30s",
+    "idle_timeout": "120s"
+  },
+  "database": {
+    "host": "prod-aurora-cluster.cluster-xyz789.eu-central-1.rds.amazonaws.com",
+    "port": "3306",
+    "user": "notification_user",
+    "password": "prod-ultra-secure-password-here",
+    "database": "notification_db",
+    "max_open_conns": 50,
+    "max_idle_conns": 25,
+    "conn_max_lifetime": 300
+  },
+  "kafka": {
+    "brokers": [
+      "prod-kafka-1.amazonaws.com:9092",
+      "prod-kafka-2.amazonaws.com:9092",
+      "prod-kafka-3.amazonaws.com:9092"
+    ],
+    "consumer_group": "notification-engine-prod",
+    "topics": {
+      "notifications": "notifications",
+      "events": "notification-events",
+      "dead_letter": "notifications-dlq"
+    }
+  },
+  "providers": {
+    "sendgrid": {
+      "sandbox_mode": false
+    },
+    "twilio": {
+      "edge_location": "sydney"
+    },
+    "fcm": {
+      "validate_only": false
+    }
+  },
+  "batch_defaults": {
+    "max_batch_size": 100,
+    "flush_interval": "10s",
+    "max_retries": 5,
+    "retry_backoff": "5s"
+  },
+  "swagger": {
+    "enabled": false,
+    "host": "api.yourcompany.com",
+    "title": "Notification Engine API",
+    "version": "1.0"
+  },
+  "logging": {
+    "graylog_addr": "prod-graylog.yourcompany.com:12201",
+    "service_name": "notification-engine"
+  },
+  "auth": {
+    "jwt_secret": "prod-notification-engine-jwt-secret-NEVER-SHARE-THIS-ANYWHERE-z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4j3i2h1g0f9e8d7c6b5a4",
+    "kafka_api_key": "prod-kafka-api-key-ULTRA-SECURE-NEVER-SHARE-m9n8b7v6c5x4z3a2s1d0f9g8h7j6k5l4"
+  }
+}

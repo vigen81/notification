@@ -6,10 +6,11 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"gitlab.smartbet.am/golang/notification/internal/config"
 )
 
 // AuthMiddleware validates JWT tokens for global API authentication
-func AuthMiddleware() fiber.Handler {
+func AuthMiddleware(cfg *config.Config) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Get token from header
 		authHeader := c.Get("Authorization")
@@ -30,9 +31,8 @@ func AuthMiddleware() fiber.Handler {
 				return nil, fiber.ErrUnauthorized
 			}
 
-			// Return secret key (should be from config/environment)
-			secretKey := "your-secret-key" // TODO: Move to config
-			return []byte(secretKey), nil
+			// Return secret key from config
+			return []byte(cfg.Auth.JWTSecret), nil
 		})
 
 		if err != nil || !token.Valid {
@@ -76,7 +76,7 @@ func TenantParameterMiddleware() fiber.Handler {
 }
 
 // KafkaAuthMiddleware provides additional security for Kafka endpoints
-func KafkaAuthMiddleware() fiber.Handler {
+func KafkaAuthMiddleware(cfg *config.Config) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Additional security for Kafka endpoints
 		apiKey := c.Get("X-Kafka-API-Key")
@@ -87,9 +87,8 @@ func KafkaAuthMiddleware() fiber.Handler {
 			})
 		}
 
-		// Validate API key (should check against config/database)
-		validAPIKey := "your-kafka-api-key" // TODO: Move to config
-		if apiKey != validAPIKey {
+		// Validate API key from config
+		if apiKey != cfg.Auth.KafkaAPIKey {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Invalid Kafka API key",
 				"code":  "INVALID_KAFKA_KEY",

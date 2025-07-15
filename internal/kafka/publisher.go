@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/ThreeDotsLabs/watermill"
@@ -28,6 +29,8 @@ func NewPublisher(cfg *config.Config) (*Publisher, error) {
 		OverwriteSaramaConfig: saramaConfig,
 	}
 
+	dd, _ := json.Marshal(cfg.Kafka)
+	fmt.Println(string(dd))
 	publisher, err := kafka.NewPublisher(publisherConfig, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create kafka publisher: %w", err)
