@@ -2,8 +2,12 @@ package kafka
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/Shopify/sarama"
+	"log"
+	"os"
 
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
@@ -19,9 +23,23 @@ type Publisher struct {
 func NewPublisher(cfg *config.Config) (*Publisher, error) {
 	logger := watermill.NewStdLogger(false, false)
 
-	saramaConfig := kafka.DefaultSaramaSyncPublisherConfig()
+	saramaConfig := sarama.NewConfig()
 	saramaConfig.Producer.Return.Successes = true
 	saramaConfig.Producer.Return.Errors = true
+	sarama.Logger = log.New(os.Stdout, "[sarama] ", log.LstdFlags)
+
+	if os.Getenv("LOCAL") != "true" {
+		saramaConfig.Net.SASL.Enable = true
+		saramaConfig.Net.SASL.Mechanism = sarama.SASLTypeOAuth
+		saramaConfig.Net.SASL.TokenProvider = &MSKAccessTokenProvider{Region: "eu-central-1"}
+		saramaConfig.Net.TLS.Enable = true
+		saramaConfig.Net.TLS.Config = &tls.Config{
+			InsecureSkipVerify: true, // This is not recommended for production use
+		}
+	}
+	saramaConfig.Version = sarama.V2_1_0_0
+	saramaConfig.Consumer.Return.Errors = true
+	saramaConfig.ClientID = "watermill"
 
 	publisherConfig := kafka.PublisherConfig{
 		Brokers:               cfg.Kafka.Brokers,

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"entgo.io/ent/dialect"
@@ -91,7 +92,7 @@ func seedPartnerConfigsSafe(ctx context.Context, client *ent.Client, logger *log
 			name:     "Goodwin Casino",
 			emailProviders: []schema.ProviderConfig{
 				{
-					Name:     "primary",
+					Name:     "sendgrid_primary",
 					Type:     "smtp",
 					Priority: 1,
 					Enabled:  true,
@@ -99,13 +100,13 @@ func seedPartnerConfigsSafe(ctx context.Context, client *ent.Client, logger *log
 						"Host":               "smtp.sendgrid.net",
 						"Port":               "465",
 						"Username":           "apikey",
-						"Password":           "SG.test_key_12345",
+						"Password":           "",
 						"SMTPAuth":           "1",
 						"SMTPSecure":         "ssl",
 						"MSGBonusFrom":       "bonus@goodwin.am",
 						"MSGPromoFrom":       "promo@goodwin.am",
 						"MSGReportFrom":      "reports@goodwin.am",
-						"MSGSystemFrom":      "noreply@goodwin.am",
+						"MSGSystemFrom":      "system@goodwin.am",
 						"MSGPaymentFrom":     "payments@goodwin.am",
 						"MSGSupportFrom":     "support@goodwin.am",
 						"MSGBonusFromName":   "Goodwin Bonus Team",
@@ -119,25 +120,30 @@ func seedPartnerConfigsSafe(ctx context.Context, client *ent.Client, logger *log
 			},
 			smsProviders: []schema.ProviderConfig{
 				{
-					Name:     "primary",
-					Type:     "twilio",
+					Name:     "nikita_sms",
+					Type:     "custom",
 					Priority: 1,
 					Enabled:  true,
 					Config: map[string]interface{}{
-						"account_sid": "AC_test_123456789",
-						"auth_token":  "test_token_123",
-						"from_number": "+1234567890",
+						"url_mrk":          "http://45.131.124.7",
+						"url_trans":        "http://45.131.124.7",
+						"password_mrk":     "",
+						"username_mrk":     "goodwmrk",
+						"originator_mrk":   "Goodwin.am",
+						"password_trans":   "",
+						"username_trans":   "goodwtrns",
+						"originator_trans": "Goodwin",
 					},
 				},
 			},
 			pushProviders: []schema.ProviderConfig{
 				{
-					Name:     "primary",
+					Name:     "fcm_primary",
 					Type:     "fcm",
 					Priority: 1,
 					Enabled:  true,
 					Config: map[string]interface{}{
-						"server_key": "fcm_server_key_123",
+						"server_key": "fcm_server_key_placeholder",
 						"project_id": "goodwin-casino",
 					},
 				},
@@ -160,15 +166,15 @@ func seedPartnerConfigsSafe(ctx context.Context, client *ent.Client, logger *log
 			name:     "StarBet",
 			emailProviders: []schema.ProviderConfig{
 				{
-					Name:     "primary",
+					Name:     "smtp_primary",
 					Type:     "smtp",
 					Priority: 1,
 					Enabled:  true,
 					Config: map[string]interface{}{
-						"Host":              "smtp.sendx.io",
+						"Host":              "smtp.sendgrid.net",
 						"Port":              "587",
-						"Username":          "starbet@sendx.io",
-						"Password":          "sendx_password_456",
+						"Username":          "apikey",
+						"Password":          "",
 						"SMTPAuth":          "1",
 						"SMTPSecure":        "tls",
 						"MSGBonusFrom":      "bonuses@starbet.com",
@@ -180,7 +186,24 @@ func seedPartnerConfigsSafe(ctx context.Context, client *ent.Client, logger *log
 					},
 				},
 			},
-			smsProviders:  []schema.ProviderConfig{},
+			smsProviders: []schema.ProviderConfig{
+				{
+					Name:     "nikita_sms",
+					Type:     "custom",
+					Priority: 1,
+					Enabled:  true,
+					Config: map[string]interface{}{
+						"url_mrk":          "http://45.131.124.7",
+						"url_trans":        "http://45.131.124.7",
+						"password_mrk":     "",
+						"username_mrk":     "goodwmrk",
+						"originator_mrk":   "StarBet.am",
+						"password_trans":   "",
+						"username_trans":   "goodwtrns",
+						"originator_trans": "StarBet",
+					},
+				},
+			},
 			pushProviders: []schema.ProviderConfig{},
 			batchConfig: &schema.BatchConfig{
 				Enabled:              true,
@@ -189,18 +212,35 @@ func seedPartnerConfigsSafe(ctx context.Context, client *ent.Client, logger *log
 			},
 			rateLimits: map[string]schema.RateLimit{
 				"email": {Limit: 500, Window: "1h", Strategy: "sliding"},
-				"sms":   {Limit: 100, Window: "1h", Strategy: "sliding"},
+				"sms":   {Limit: 200, Window: "1h", Strategy: "sliding"},
 				"push":  {Limit: 1000, Window: "1h", Strategy: "sliding"},
 			},
 			enabled: true,
 		},
 		{
-			id:             "luckyplay-1003",
-			tenantID:       1003,
-			name:           "LuckyPlay",
-			emailProviders: []schema.ProviderConfig{},
-			smsProviders:   []schema.ProviderConfig{},
-			pushProviders:  []schema.ProviderConfig{},
+			id:       "luckyplay-1003",
+			tenantID: 1003,
+			name:     "LuckyPlay",
+			emailProviders: []schema.ProviderConfig{
+				{
+					Name:     "smtp_backup",
+					Type:     "smtp",
+					Priority: 1,
+					Enabled:  false, // Disabled for testing
+					Config: map[string]interface{}{
+						"Host":              "smtp.mailtrap.io",
+						"Port":              "2525",
+						"Username":          "placeholder_username",
+						"Password":          "placeholder_password",
+						"SMTPAuth":          "1",
+						"SMTPSecure":        "tls",
+						"MSGSystemFrom":     "test@luckyplay.com",
+						"MSGSystemFromName": "LuckyPlay Test",
+					},
+				},
+			},
+			smsProviders:  []schema.ProviderConfig{},
+			pushProviders: []schema.ProviderConfig{},
 			batchConfig: &schema.BatchConfig{
 				Enabled: false,
 			},
@@ -209,7 +249,7 @@ func seedPartnerConfigsSafe(ctx context.Context, client *ent.Client, logger *log
 				"sms":   {Limit: 50, Window: "1h", Strategy: "sliding"},
 				"push":  {Limit: 200, Window: "1h", Strategy: "sliding"},
 			},
-			enabled: false,
+			enabled: false, // Disabled tenant for testing
 		},
 	}
 
@@ -265,7 +305,7 @@ func seedNotificationsSafe(ctx context.Context, client *ent.Client, logger *logr
 func createNotificationsForTenant(ctx context.Context, client *ent.Client, tenantID int64, logger *logrus.Logger) {
 	now := time.Now()
 
-	// Create different types of notifications
+	// Create different types of notifications including SMS
 	notifications := []struct {
 		count      int
 		notifType  notification.Type
@@ -274,20 +314,26 @@ func createNotificationsForTenant(ctx context.Context, client *ent.Client, tenan
 		bodyPrefix string
 		from       string
 		scheduled  bool
+		addresses  []string // Different addresses for email vs SMS
 	}{
-		{15, notification.TypeEMAIL, notification.StatusCOMPLETED, "Welcome Bonus", "Welcome to our platform! Notification", "bonus@goodwin.am", false},
-		{5, notification.TypeSMS, notification.StatusPENDING, "", "Your verification code:", "", false},
-		{3, notification.TypeEMAIL, notification.StatusFAILED, "Account Update", "Important account information", "system@goodwin.am", false},
-		{2, notification.TypeEMAIL, notification.StatusPENDING, "Weekend Promotion", "Don't miss our weekend special!", "promo@goodwin.am", true},
+		{10, notification.TypeEMAIL, notification.StatusCOMPLETED, "Welcome Bonus", "Welcome to our platform! Notification", "bonus@goodwin.am", false, []string{"user%d@example.com"}},
+		{5, notification.TypeSMS, notification.StatusCOMPLETED, "", "Your verification code:", "", false, []string{"+37499%07d"}},
+		{3, notification.TypeEMAIL, notification.StatusFAILED, "Account Update", "Important account information", "system@goodwin.am", false, []string{"user%d@example.com"}},
+		{2, notification.TypeSMS, notification.StatusPENDING, "", "Special offer! Don't miss out!", "", false, []string{"+37499%07d"}},
+		{2, notification.TypeEMAIL, notification.StatusPENDING, "Weekend Promotion", "Don't miss our weekend special!", "promo@goodwin.am", true, []string{"user%d@example.com"}},
 	}
 
 	totalCreated := 0
 	for _, notif := range notifications {
 		for i := 0; i < notif.count; i++ {
 			requestID := uuid.New().String()
-			address := fmt.Sprintf("user%d@example.com", totalCreated+1)
+
+			// Generate appropriate address based on notification type
+			var address string
 			if notif.notifType == notification.TypeSMS {
-				address = fmt.Sprintf("+1555%07d", totalCreated+1)
+				address = fmt.Sprintf(notif.addresses[0], 746694+totalCreated) // Armenian phone numbers
+			} else {
+				address = fmt.Sprintf(notif.addresses[0], totalCreated+1)
 			}
 
 			create := client.Notification.Create().
@@ -309,15 +355,24 @@ func createNotificationsForTenant(ctx context.Context, client *ent.Client, tenan
 				create.SetScheduleTs(futureTime)
 			}
 			if notif.status == notification.StatusFAILED {
-				create.SetErrorMessage("Delivery failed - invalid address format")
+				create.SetErrorMessage("Delivery failed - test error message")
 				create.SetRetryCount(2)
 			}
 
-			// Add metadata
+			// Add metadata with message type
+			messageType := "system"
+			if strings.Contains(notif.bodyPrefix, "Welcome") || strings.Contains(notif.bodyPrefix, "Bonus") {
+				messageType = "bonus"
+			} else if strings.Contains(notif.bodyPrefix, "Promotion") || strings.Contains(notif.bodyPrefix, "offer") {
+				messageType = "promo"
+			} else if strings.Contains(notif.bodyPrefix, "verification") {
+				messageType = "system"
+			}
+
 			metaData := map[string]interface{}{
 				"service": "test-service",
 				"params": map[string]interface{}{
-					"message_type": "system",
+					"message_type": messageType,
 					"tenant_name":  fmt.Sprintf("tenant_%d", tenantID),
 				},
 			}

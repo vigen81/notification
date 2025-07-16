@@ -1,5 +1,5 @@
 # Updated Dockerfile for AWS Parameter Store Configuration
-FROM golang:1.24.4-alpine AS builder
+FROM 499144353299.dkr.ecr.eu-central-1.amazonaws.com/docker-hub/library/golang:1.24-alpine AS build
 
 # Install dependencies including Git and build tools
 RUN apk add --no-cache git ca-certificates tzdata
@@ -31,29 +31,13 @@ RUN swag init -g cmd/server/main.go -o docs/
 RUN go mod tidy
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o notification-engine ./cmd/server
+RUN go build -o app ./cmd/server
 
-# Final stage
-FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates tzdata
-WORKDIR /app
+FROM scratch
 
-# Copy binary from builder
-COPY --from=builder /app/notification-engine .
+COPY --from=build /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=build /etc/ssl/certs /etc/ssl/certs
+COPY --from=build /app/app /app
 
-# Create non-root user
-RUN addgroup -g 1001 -S notifier && \
-    adduser -S notifier -u 1001 -G notifier
-
-USER notifier
-
-EXPOSE 8080
-
-# Environment variables for AWS Parameter Store
-ENV AWS_REGION=eu-central-1
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
-
-CMD ["./notification-engine"]
+ENTRYPOINT ["/app"]

@@ -80,7 +80,7 @@ import (
 // @tag.description Health and readiness checks
 
 func main() {
-	serviceName := "notification-engine"
+	serviceName := "notification-service"
 
 	fx.New(
 		fx.Provide(func(lifecycle fx.Lifecycle) (*config.Config, error) {

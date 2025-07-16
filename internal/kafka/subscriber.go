@@ -2,7 +2,10 @@ package kafka
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"github.com/Shopify/sarama"
+	"os"
 
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
@@ -18,8 +21,23 @@ type Subscriber struct {
 func NewSubscriber(cfg *config.Config) (*Subscriber, error) {
 	logger := watermill.NewStdLogger(false, false)
 
-	saramaConfig := kafka.DefaultSaramaSubscriberConfig()
+	saramaConfig := sarama.NewConfig()
+
 	saramaConfig.Consumer.Offsets.Initial = -1
+
+	if os.Getenv("LOCAL") != "true" {
+		saramaConfig.Net.SASL.Enable = true
+		saramaConfig.Net.SASL.Mechanism = sarama.SASLTypeOAuth
+		saramaConfig.Net.SASL.TokenProvider = &MSKAccessTokenProvider{Region: "eu-central-1"}
+		saramaConfig.Net.TLS.Enable = true // Replace with your region
+		saramaConfig.Net.TLS.Config = &tls.Config{
+			InsecureSkipVerify: true, // This is not recommended for production use
+		}
+	}
+
+	saramaConfig.Version = sarama.V2_1_0_0
+	saramaConfig.Consumer.Return.Errors = true
+	saramaConfig.ClientID = "watermill"
 
 	subscriberConfig := kafka.SubscriberConfig{
 		Brokers:               cfg.Kafka.Brokers,
