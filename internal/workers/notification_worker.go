@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -38,9 +39,13 @@ func NewNotificationWorker(
 }
 
 func (w *NotificationWorker) Start(ctx context.Context) error {
-	// Use existing Kafka subscription - no changes needed here!
 	messages, err := w.subscriber.Subscribe(ctx, "notifications")
 	if err != nil {
+		if strings.Contains(err.Error(), "does not exist") ||
+			strings.Contains(err.Error(), "unknown topic") ||
+			strings.Contains(err.Error(), "UNKNOWN_TOPIC_OR_PARTITION") {
+			return fmt.Errorf("topic 'notifications' does not exist - please create it first: %w", err)
+		}
 		return fmt.Errorf("failed to subscribe to notifications topic: %w", err)
 	}
 
@@ -72,11 +77,22 @@ func (w *NotificationWorker) processMessages(ctx context.Context, messages <-cha
 			startTime := time.Now()
 
 			if err := w.processMessage(ctx, msg); err != nil {
-				w.logger.WithFields(logrus.Fields{
-					"message_id": msg.UUID,
-					"duration":   time.Since(startTime),
-				}).WithError(err).Error("Failed to process message")
-				msg.Nack()
+				if strings.Contains(err.Error(), "failed to get partner config") ||
+					strings.Contains(err.Error(), "provider") ||
+					strings.Contains(err.Error(), "timeout") ||
+					strings.Contains(err.Error(), "connection") {
+					w.logger.WithFields(logrus.Fields{
+						"message_id": msg.UUID,
+						"duration":   time.Since(startTime),
+					}).WithError(err).Error("Failed to process message - will retry")
+					msg.Nack()
+				} else {
+					w.logger.WithFields(logrus.Fields{
+						"message_id": msg.UUID,
+						"duration":   time.Since(startTime),
+					}).WithError(err).Error("Failed to process message - unrecoverable error")
+					msg.Ack()
+				}
 			} else {
 				w.logger.WithFields(logrus.Fields{
 					"message_id": msg.UUID,
@@ -93,7 +109,22 @@ func (w *NotificationWorker) processMessages(ctx context.Context, messages <-cha
 func (w *NotificationWorker) processMessage(ctx context.Context, msg *message.Message) error {
 	var req models.NotificationRequest
 	if err := json.Unmarshal(msg.Payload, &req); err != nil {
-		return fmt.Errorf("failed to unmarshal notification request: %w", err)
+		w.logger.WithFields(logrus.Fields{
+			"message_id": msg.UUID,
+			"error":      err.Error(),
+			"payload":    string(msg.Payload),
+		}).Error("Failed to unmarshal message - skipping")
+		return nil
+	}
+
+	if req.TenantID == 0 || req.Type == "" || len(req.Recipients) == 0 || req.Body == "" {
+		w.logger.WithFields(logrus.Fields{
+			"message_id": msg.UUID,
+			"tenant_id":  req.TenantID,
+			"type":       req.Type,
+			"recipients": len(req.Recipients),
+		}).Error("Invalid notification request - skipping")
+		return nil
 	}
 
 	// Simply pass to buffered service - it will decide whether to buffer or process immediately

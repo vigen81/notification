@@ -5,6 +5,7 @@ package repository
 import (
 	"context"
 	"entgo.io/ent/dialect/sql"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"gitlab.smartbet.am/golang/notification/ent"
@@ -94,6 +95,88 @@ func (r *NotificationRepository) Create(ctx context.Context, req *models.Notific
 	}
 
 	return create.Save(ctx)
+}
+
+func (r *NotificationRepository) CreateBatch(ctx context.Context, req *models.NotificationRequest) ([]*ent.Notification, error) {
+	if len(req.Recipients) == 0 {
+		return nil, fmt.Errorf("no recipients provided")
+	}
+
+	// Build the base meta once
+	var baseMeta *schema.NotificationMeta
+	if req.Meta != nil {
+		baseMeta = &schema.NotificationMeta{
+			Service:    req.Meta.Service,
+			TemplateID: req.Meta.TemplateID,
+			Params:     req.Meta.Params,
+			Data:       req.Meta.Data,
+		}
+		if req.Meta.Attachment != nil {
+			baseMeta.Attachment = &schema.Attachment{
+				Filename:    req.Meta.Attachment.Filename,
+				Content:     req.Meta.Attachment.Content,
+				Disposition: req.Meta.Attachment.Disposition,
+				Type:        req.Meta.Attachment.Type,
+			}
+		}
+	} else {
+		baseMeta = &schema.NotificationMeta{}
+	}
+
+	if baseMeta.Params == nil {
+		baseMeta.Params = make(map[string]interface{})
+	}
+	baseMeta.Params["original_request_id"] = req.RequestID
+	baseMeta.Params["message_type"] = string(req.MessageType)
+
+	builders := make([]*ent.NotificationCreate, 0, len(req.Recipients))
+
+	for _, recipient := range req.Recipients {
+		uniqueRequestID := uuid.New().String()
+
+		create := r.client.Notification.Create().
+			SetRequestID(uniqueRequestID).
+			SetTenantID(req.TenantID).
+			SetType(notification.Type(req.Type)).
+			SetBody(req.Body).
+			SetAddress(types.Address(recipient)).
+			SetStatus(notification.StatusPENDING).
+			SetMeta(baseMeta)
+
+		if req.Headline != "" {
+			create.SetHeadline(req.Headline)
+		}
+		if req.From != "" {
+			create.SetFrom(req.From)
+		}
+		if req.ReplyTo != "" {
+			create.SetReplyTo(req.ReplyTo)
+		}
+		if req.Tag != "" {
+			create.SetTag(req.Tag)
+		}
+		if req.ScheduleTS != nil {
+			create.SetScheduleTs(*req.ScheduleTS)
+		}
+		if req.BatchID != "" {
+			create.SetBatchID(req.BatchID)
+		}
+
+		builders = append(builders, create)
+	}
+
+	notifications, err := r.client.Notification.CreateBulk(builders...).Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to bulk create notifications: %w", err)
+	}
+
+	r.logger.WithFields(logrus.Fields{
+		"tenant_id": req.TenantID,
+		"count":     len(notifications),
+		"batch_id":  req.BatchID,
+	}).Debug("Batch created notifications")
+
+	return notifications, nil
 }
 
 func (r *NotificationRepository) GetByRequestID(ctx context.Context, requestID string) (*ent.Notification, error) {

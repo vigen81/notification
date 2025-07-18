@@ -65,18 +65,13 @@ func (s *NotificationService) ProcessNotification(ctx context.Context, req *mode
 		return fmt.Errorf("failed to get partner config: %w", err)
 	}
 
-	// ALWAYS store notifications in database first (whether immediate or scheduled)
-	var notifications []*ent.Notification
-	for _, recipient := range req.Recipients {
-		notif, err := s.notifRepo.Create(ctx, req, recipient)
-		if err != nil {
-			log.Error("Failed to store notification in database", err, map[string]interface{}{
-				"recipient": recipient,
-				"tenant_id": req.TenantID,
-			})
-			continue // Continue with other recipients
-		}
-		notifications = append(notifications, notif)
+	notifications, err := s.notifRepo.CreateBatch(ctx, req)
+	if err != nil {
+		log.Error("Failed to store notifications in database", err, map[string]interface{}{
+			"tenant_id":  req.TenantID,
+			"recipients": len(req.Recipients),
+		})
+		return fmt.Errorf("failed to store notifications in database: %w", err)
 	}
 
 	if len(notifications) == 0 {
