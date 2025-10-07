@@ -100,7 +100,7 @@ func seedPartnerConfigsSafe(ctx context.Context, client *ent.Client, logger *log
 						"Host":               "smtp.sendgrid.net",
 						"Port":               "465",
 						"Username":           "apikey",
-						"Password":           "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",
+						"Password":           "",
 						"SMTPAuth":           "1",
 						"SMTPSecure":         "ssl",
 						"MSGBonusFrom":       "bonus@goodwin.am",
@@ -195,7 +195,7 @@ func seedPartnerConfigsSafe(ctx context.Context, client *ent.Client, logger *log
 					Config: map[string]interface{}{
 						"url_mrk":          "http://45.131.124.7",
 						"url_trans":        "http://45.131.124.7",
-						"password_mrk":     "VkEs3%BmA#Cp",
+						"password_mrk":     "",
 						"username_mrk":     "goodwmrk",
 						"originator_mrk":   "StarBet.am",
 						"password_trans":   "GdW225",
