@@ -127,7 +127,7 @@ func seedPartnerConfigsSafe(ctx context.Context, client *ent.Client, logger *log
 					Config: map[string]interface{}{
 						"url_mrk":          "http://45.131.124.7",
 						"url_trans":        "http://45.131.124.7",
-						"password_mrk":     "VkEs3%BmA#Cp",
+						"password_mrk":     "",
 						"username_mrk":     "goodwmrk",
 						"originator_mrk":   "Goodwin.am",
 						"password_trans":   "GdW225",
