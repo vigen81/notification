@@ -4,6 +4,7 @@ package repository
 
 import (
 	"context"
+
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -175,4 +176,12 @@ func (r *NotificationRepository) GetByBatchID(ctx context.Context, batchID strin
 	return r.client.Notification.Query().
 		Where(notification.BatchID(batchID)).
 		All(ctx)
+}
+
+func (r *NotificationRepository) UpdateStatusByRequestID(ctx context.Context, requestID string, status notification.Status) error {
+	return r.client.Notification.
+		Update().
+		Where(notification.RequestID(requestID)).
+		SetStatus(status).
+		Exec(ctx)
 }

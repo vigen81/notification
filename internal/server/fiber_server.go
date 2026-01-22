@@ -17,12 +17,13 @@ import (
 )
 
 type FiberServer struct {
-	app           *fiber.App
-	config        *config.Config
-	notifHandler  *handlers.NotificationHandler
-	configHandler *handlers.ConfigHandler
-	healthHandler *handlers.HealthHandler
-	logger        *logrus.Logger
+	app            *fiber.App
+	config         *config.Config
+	notifHandler   *handlers.NotificationHandler
+	configHandler  *handlers.ConfigHandler
+	healthHandler  *handlers.HealthHandler
+	webhookHandler *handlers.WebhookHandler
+	logger         *logrus.Logger
 }
 
 func NewFiberServer(
@@ -30,6 +31,7 @@ func NewFiberServer(
 	notifHandler *handlers.NotificationHandler,
 	configHandler *handlers.ConfigHandler,
 	healthHandler *handlers.HealthHandler,
+	webhookHandler *handlers.WebhookHandler,
 	logger *logrus.Logger,
 ) *FiberServer {
 	app := fiber.New(fiber.Config{
@@ -52,12 +54,13 @@ func NewFiberServer(
 	}))
 
 	server := &FiberServer{
-		app:           app,
-		config:        config,
-		notifHandler:  notifHandler,
-		configHandler: configHandler,
-		healthHandler: healthHandler,
-		logger:        logger,
+		app:            app,
+		config:         config,
+		notifHandler:   notifHandler,
+		configHandler:  configHandler,
+		healthHandler:  healthHandler,
+		webhookHandler: webhookHandler,
+		logger:         logger,
 	}
 
 	server.setupRoutes()
@@ -69,6 +72,10 @@ func (s *FiberServer) setupRoutes() {
 	s.app.Get("/health", s.healthHandler.HealthCheck)
 	s.app.Get("/ready", s.healthHandler.ReadinessCheck)
 	s.app.Get("/live", s.healthHandler.LivenessCheck)
+
+	// Public webhooks - no auth required
+	public := s.app.Group("/public/api/v1")
+	public.Post("/webhooks/sendgrid", s.webhookHandler.HandleSendGridWebhook)
 
 	// Swagger documentation
 	if s.config.Swagger.Enabled {

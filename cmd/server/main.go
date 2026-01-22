@@ -167,6 +167,12 @@ func main() {
 		fx.Provide(func(logger *logrus.Logger) *handlers.HealthHandler {
 			return handlers.NewHealthHandler(logger)
 		}),
+		fx.Provide(func(
+			notificationSvc *services.NotificationService,
+			logger *logrus.Logger,
+		) *handlers.WebhookHandler {
+			return handlers.NewWebhookHandler(notificationSvc, logger)
+		}),
 
 		// Workers
 		fx.Provide(func(
@@ -191,9 +197,10 @@ func main() {
 			notifHandler *handlers.NotificationHandler,
 			configHandler *handlers.ConfigHandler,
 			healthHandler *handlers.HealthHandler,
+			webhookHandler *handlers.WebhookHandler,
 			logger *logrus.Logger,
 		) *server.FiberServer {
-			return server.NewFiberServer(cfg, notifHandler, configHandler, healthHandler, logger)
+			return server.NewFiberServer(cfg, notifHandler, configHandler, healthHandler, webhookHandler, logger)
 		}),
 
 		// Lifecycle

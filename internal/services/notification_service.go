@@ -294,3 +294,26 @@ func (s *NotificationService) GetNotification(ctx context.Context, tenantID int6
 
 	return notif, nil
 }
+
+func (s *NotificationService) UpdateStatusFromWebhook(ctx context.Context, requestID, event string) error {
+	status := mapSendGridEventToStatus(event)
+
+	return s.notifRepo.UpdateStatusByRequestID(ctx, requestID, notification.Status(status))
+}
+
+func mapSendGridEventToStatus(event string) string {
+	switch event {
+	case "delivered":
+		return "DELIVERED"
+	case "open":
+		return "OPENED"
+	case "click":
+		return "CLICKED"
+	case "bounce", "dropped":
+		return "FAILED"
+	case "spamreport", "unsubscribe":
+		return "REJECTED"
+	default:
+		return "UNKNOWN"
+	}
+}
