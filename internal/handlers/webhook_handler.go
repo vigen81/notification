@@ -33,11 +33,14 @@ func NewWebhookHandler(ns *services.NotificationService, logger *logrus.Logger) 
 
 // HandleSendGridWebhook processes SendGrid event webhooks
 // @Summary Handle SendGrid webhook events
-// @Tags Webhooks
+// @Description Receives email events from SendGrid (open, click, delivered, bounce, etc.)
+// @Tags webhooks
 // @Accept json
 // @Produce json
+// @Param events body []SendGridEvent true "SendGrid events array"
 // @Success 200 {object} map[string]string
-// @Router /api/v1/webhooks/sendgrid [post]
+// @Failure 400 {object} map[string]string
+// @Router /public/api/v1/webhooks/sendgrid [post]
 func (h *WebhookHandler) HandleSendGridWebhook(c *fiber.Ctx) error {
 	var events []SendGridEvent
 	if err := c.BodyParser(&events); err != nil {

@@ -1,5 +1,31 @@
 basePath: /api/v1
 definitions:
+  handlers.SendGridEvent:
+    properties:
+      email:
+        type: string
+      event:
+        description: open, click, delivered, bounce, dropped, etc.
+        type: string
+      ip:
+        type: string
+      request_id:
+        description: custom arg we pass when sending
+        type: string
+      sg_event_id:
+        type: string
+      sg_message_id:
+        type: string
+      tenant_id:
+        type: integer
+      timestamp:
+        type: integer
+      url:
+        description: for click events
+        type: string
+      useragent:
+        type: string
+    type: object
   models.AddProviderRequest:
     properties:
       config:
@@ -901,6 +927,39 @@ paths:
       summary: Get notification status
       tags:
       - notifications
+  /public/api/v1/webhooks/sendgrid:
+    post:
+      consumes:
+      - application/json
+      description: Receives email events from SendGrid (open, click, delivered, bounce,
+        etc.)
+      parameters:
+      - description: SendGrid events array
+        in: body
+        name: events
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/handlers.SendGridEvent'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Handle SendGrid webhook events
+      tags:
+      - webhooks
   /ready:
     get:
       description: Returns the readiness status of the notification engine including

@@ -711,6 +711,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/public/api/v1/webhooks/sendgrid": {
+            "post": {
+                "description": "Receives email events from SendGrid (open, click, delivered, bounce, etc.)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "webhooks"
+                ],
+                "summary": "Handle SendGrid webhook events",
+                "parameters": [
+                    {
+                        "description": "SendGrid events array",
+                        "name": "events",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.SendGridEvent"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/ready": {
             "get": {
                 "description": "Returns the readiness status of the notification engine including dependency checks. Available at both /ready and /api/v1/ready",
@@ -739,6 +788,44 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.SendGridEvent": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "event": {
+                    "description": "open, click, delivered, bounce, dropped, etc.",
+                    "type": "string"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "request_id": {
+                    "description": "custom arg we pass when sending",
+                    "type": "string"
+                },
+                "sg_event_id": {
+                    "type": "string"
+                },
+                "sg_message_id": {
+                    "type": "string"
+                },
+                "tenant_id": {
+                    "type": "integer"
+                },
+                "timestamp": {
+                    "type": "integer"
+                },
+                "url": {
+                    "description": "for click events",
+                    "type": "string"
+                },
+                "useragent": {
+                    "type": "string"
+                }
+            }
+        },
         "models.AddProviderRequest": {
             "type": "object",
             "properties": {
