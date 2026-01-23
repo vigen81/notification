@@ -3,6 +3,8 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"net"
+	"time"
 
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-kafka/v3/pkg/kafka"
@@ -16,11 +18,19 @@ type Publisher struct {
 }
 
 func NewPublisher(cfg *config.Config) (*Publisher, error) {
-	logger := watermill.NewStdLogger(false, false)
+	logger := watermill.NewStdLogger(true, true)
 
 	saramaConfig := kafka.DefaultSaramaSyncPublisherConfig()
 	saramaConfig.Producer.Return.Successes = true
 	saramaConfig.Producer.Return.Errors = true
+
+	for _, broker := range cfg.Kafka.Brokers {
+		conn, err := net.DialTimeout("tcp", broker, 2*time.Second)
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect to kafka broker %s: %w", broker, err)
+		}
+		conn.Close()
+	}
 
 	publisherConfig := kafka.PublisherConfig{
 		Brokers:               cfg.Kafka.Brokers,
