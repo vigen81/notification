@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"time"
@@ -31,8 +32,13 @@ func NewSubscriber(cfg *config.Config) (*Subscriber, error) {
 
 	saramaConfig := sarama.NewConfig()
 	saramaConfig.Consumer.Offsets.Initial = sarama.OffsetOldest
-	saramaConfig.Net.SASL.TokenProvider = &MSKAccessTokenProvider{Region: "eu-central-1"}
 	saramaConfig.Net.TLS.Enable = true
+	saramaConfig.Net.TLS.Config = &tls.Config{
+		InsecureSkipVerify: true, // Equivalent to ssl.endpoint.identification.algorithm=
+	}
+	saramaConfig.Net.SASL.Enable = true
+	saramaConfig.Net.SASL.Mechanism = sarama.SASLTypeOAuth
+	saramaConfig.Net.SASL.TokenProvider = &MSKAccessTokenProvider{Region: "eu-central-1"}
 
 	subscriberConfig := kafka.SubscriberConfig{
 		Brokers:               cfg.Kafka.Brokers,
