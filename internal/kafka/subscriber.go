@@ -3,7 +3,10 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"net"
+	"time"
 
+	"github.com/IBM/sarama"
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-kafka/v3/pkg/kafka"
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -16,10 +19,20 @@ type Subscriber struct {
 }
 
 func NewSubscriber(cfg *config.Config) (*Subscriber, error) {
-	logger := watermill.NewStdLogger(false, false)
+	logger := watermill.NewStdLogger(true, true)
 
-	saramaConfig := kafka.DefaultSaramaSubscriberConfig()
-	saramaConfig.Consumer.Offsets.Initial = -1
+	for _, broker := range cfg.Kafka.Brokers {
+		conn, err := net.DialTimeout("tcp", broker, 5*time.Second)
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect to kafka broker %s: %w", broker, err)
+		}
+		conn.Close()
+	}
+
+	saramaConfig := sarama.NewConfig()
+	saramaConfig.Consumer.Offsets.Initial = sarama.OffsetOldest
+	saramaConfig.Net.SASL.TokenProvider = &MSKAccessTokenProvider{Region: "eu-central-1"}
+	saramaConfig.Net.TLS.Enable = true
 
 	subscriberConfig := kafka.SubscriberConfig{
 		Brokers:               cfg.Kafka.Brokers,
