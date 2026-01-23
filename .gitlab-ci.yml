@@ -8,7 +8,7 @@ stages:
 
 include:
   - project: 'devops/templates'
-    ref: 'main'
+    ref: 'ec2'
     file:
       - 'arm-build-ci.yml'
       - 'arm-migration-ci.yml'
