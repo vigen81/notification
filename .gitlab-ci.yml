@@ -21,6 +21,10 @@ build:
       variables:
         DOCKER_REPOSITORY: "golang-notification-dev"
       when: always
+    - if: '$CI_COMMIT_BRANCH  == "main"'
+      variables:
+        DOCKER_REPOSITORY: "golang-notification"
+      when: always
     - when: never
 
 dev:migration:
@@ -41,18 +45,22 @@ dev:deploy:
   only:
     - notification-engine
 
-# prod:migration:
-#   stage: migration
-#   when: manual
-#   needs:
-#     - build
-#   only:
-#     - main
+prod:migration:
+  stage: migration
+  when: manual
+  needs:
+    - build
+  rules:
+    - if: '$CI_COMMIT_BRANCH  == "main"'
+      variables:
+        DOCKER_REPOSITORY: "golang-notification"
+      when: always
+    - when: never
 
-# prod:deploy:
-#   stage: deploy
-#   when: manual
-#   needs:
-#     - prod:migration
-#   only:
-#     - main
+prod:deploy:
+  stage: deploy
+  when: manual
+  needs:
+    - prod:migration
+  only:
+    - main
