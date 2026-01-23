@@ -1,4 +1,3 @@
-basePath: /api/v1
 definitions:
   handlers.SendGridEvent:
     properties:
@@ -472,7 +471,7 @@ info:
   title: Notification Engine API
   version: "1.0"
 paths:
-  /config/{tenant_id}:
+  /api/v1/config/{tenant_id}:
     get:
       description: Get the complete configuration for a specific tenant including
         email, SMS, push providers, batch settings, and rate limits
@@ -552,7 +551,7 @@ paths:
       summary: Update partner configuration
       tags:
       - configuration
-  /config/{tenant_id}/providers/{type}/{name}:
+  /api/v1/config/{tenant_id}/providers/{type}/{name}:
     delete:
       description: Remove a specific provider from a tenant configuration by provider
         type and name
@@ -603,7 +602,7 @@ paths:
       summary: Remove provider
       tags:
       - configuration
-  /config/{tenant_id}/providers/email:
+  /api/v1/config/{tenant_id}/providers/email:
     post:
       consumes:
       - application/json
@@ -645,7 +644,7 @@ paths:
       summary: Add email provider
       tags:
       - configuration
-  /config/{tenant_id}/providers/push:
+  /api/v1/config/{tenant_id}/providers/push:
     post:
       consumes:
       - application/json
@@ -687,7 +686,7 @@ paths:
       summary: Add push provider
       tags:
       - configuration
-  /config/{tenant_id}/providers/sms:
+  /api/v1/config/{tenant_id}/providers/sms:
     post:
       consumes:
       - application/json
@@ -729,7 +728,7 @@ paths:
       summary: Add SMS provider
       tags:
       - configuration
-  /health:
+  /api/v1/health:
     get:
       description: Returns the general health status of the notification engine service.
         Available at both /health and /api/v1/health
@@ -743,7 +742,7 @@ paths:
       summary: Health check
       tags:
       - health
-  /kafka/publish:
+  /api/v1/kafka/publish:
     post:
       consumes:
       - application/json
@@ -780,7 +779,7 @@ paths:
       summary: Publish to Kafka
       tags:
       - kafka
-  /live:
+  /api/v1/live:
     get:
       description: Returns the liveness status of the notification engine. Available
         at both /live and /api/v1/live
@@ -794,7 +793,7 @@ paths:
       summary: Liveness check
       tags:
       - health
-  /notifications/batch:
+  /api/v1/notifications/batch:
     post:
       consumes:
       - application/json
@@ -830,7 +829,7 @@ paths:
       summary: Send batch notifications
       tags:
       - notifications
-  /notifications/batch/{batch_id}/status:
+  /api/v1/notifications/batch/{batch_id}/status:
     get:
       description: Get the status and statistics of a batch notification by its batch
         ID
@@ -860,7 +859,7 @@ paths:
       summary: Get batch status
       tags:
       - notifications
-  /notifications/send:
+  /api/v1/notifications/send:
     post:
       consumes:
       - application/json
@@ -897,7 +896,7 @@ paths:
       summary: Send a notification
       tags:
       - notifications
-  /notifications/status/{request_id}:
+  /api/v1/notifications/status/{request_id}:
     get:
       description: Get the current status and details of a notification by its request
         ID
@@ -927,6 +926,24 @@ paths:
       summary: Get notification status
       tags:
       - notifications
+  /api/v1/ready:
+    get:
+      description: Returns the readiness status of the notification engine including
+        dependency checks. Available at both /ready and /api/v1/ready
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service is ready to accept requests
+          schema:
+            $ref: '#/definitions/models.HealthResponse'
+        "503":
+          description: Service is not ready - dependencies not available
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Readiness check
+      tags:
+      - health
   /public/api/v1/webhooks/sendgrid:
     post:
       consumes:
@@ -960,24 +977,6 @@ paths:
       summary: Handle SendGrid webhook events
       tags:
       - webhooks
-  /ready:
-    get:
-      description: Returns the readiness status of the notification engine including
-        dependency checks. Available at both /ready and /api/v1/ready
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Service is ready to accept requests
-          schema:
-            $ref: '#/definitions/models.HealthResponse'
-        "503":
-          description: Service is not ready - dependencies not available
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-      summary: Readiness check
-      tags:
-      - health
 securityDefinitions:
   BearerAuth:
     description: 'Type "Bearer" followed by a space and JWT token. Example: "Bearer

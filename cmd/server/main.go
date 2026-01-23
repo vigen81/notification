@@ -60,7 +60,6 @@ import (
 // @termsOfService http://swagger.io/terms/
 
 // @host localhost:8080
-// @BasePath /api/v1
 
 // @securityDefinitions.apikey BearerAuth
 // @in header

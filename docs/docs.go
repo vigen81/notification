@@ -16,7 +16,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/config/{tenant_id}": {
+        "/api/v1/config/{tenant_id}": {
             "get": {
                 "security": [
                     {
@@ -138,7 +138,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/config/{tenant_id}/providers/email": {
+        "/api/v1/config/{tenant_id}/providers/email": {
             "post": {
                 "security": [
                     {
@@ -203,7 +203,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/config/{tenant_id}/providers/push": {
+        "/api/v1/config/{tenant_id}/providers/push": {
             "post": {
                 "security": [
                     {
@@ -268,7 +268,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/config/{tenant_id}/providers/sms": {
+        "/api/v1/config/{tenant_id}/providers/sms": {
             "post": {
                 "security": [
                     {
@@ -333,7 +333,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/config/{tenant_id}/providers/{type}/{name}": {
+        "/api/v1/config/{tenant_id}/providers/{type}/{name}": {
             "delete": {
                 "security": [
                     {
@@ -408,7 +408,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/health": {
+        "/api/v1/health": {
             "get": {
                 "description": "Returns the general health status of the notification engine service. Available at both /health and /api/v1/health",
                 "produces": [
@@ -428,7 +428,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/kafka/publish": {
+        "/api/v1/kafka/publish": {
             "post": {
                 "security": [
                     {
@@ -485,7 +485,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/live": {
+        "/api/v1/live": {
             "get": {
                 "description": "Returns the liveness status of the notification engine. Available at both /live and /api/v1/live",
                 "produces": [
@@ -505,7 +505,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/notifications/batch": {
+        "/api/v1/notifications/batch": {
             "post": {
                 "security": [
                     {
@@ -562,7 +562,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/notifications/batch/{batch_id}/status": {
+        "/api/v1/notifications/batch/{batch_id}/status": {
             "get": {
                 "security": [
                     {
@@ -608,7 +608,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/notifications/send": {
+        "/api/v1/notifications/send": {
             "post": {
                 "security": [
                     {
@@ -665,7 +665,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/notifications/status/{request_id}": {
+        "/api/v1/notifications/status/{request_id}": {
             "get": {
                 "security": [
                     {
@@ -704,6 +704,32 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/ready": {
+            "get": {
+                "description": "Returns the readiness status of the notification engine including dependency checks. Available at both /ready and /api/v1/ready",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Readiness check",
+                "responses": {
+                    "200": {
+                        "description": "Service is ready to accept requests",
+                        "schema": {
+                            "$ref": "#/definitions/models.HealthResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service is not ready - dependencies not available",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -755,32 +781,6 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
-                        }
-                    }
-                }
-            }
-        },
-        "/ready": {
-            "get": {
-                "description": "Returns the readiness status of the notification engine including dependency checks. Available at both /ready and /api/v1/ready",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "health"
-                ],
-                "summary": "Readiness check",
-                "responses": {
-                    "200": {
-                        "description": "Service is ready to accept requests",
-                        "schema": {
-                            "$ref": "#/definitions/models.HealthResponse"
-                        }
-                    },
-                    "503": {
-                        "description": "Service is not ready - dependencies not available",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     }
                 }
@@ -1446,7 +1446,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8080",
-	BasePath:         "/api/v1",
+	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "Notification Engine API",
 	Description:      "A high-performance, multi-tenant notification engine supporting Email, SMS, and Push notifications with per-partner configurations and batch processing capabilities.\n\n## Features\n- **Multi-tenant Architecture**: Per-partner configurations with isolated data\n- **Multiple Notification Types**: Email, SMS, and Push notifications\n- **Provider Flexibility**: Support for multiple providers per channel\n- **Dual API Support**: HTTP REST API and Kafka messaging\n- **Batch Processing**: Efficient batch sending with configurable thresholds\n- **Scheduled Notifications**: Support for future-dated notifications\n- **Message Type Based Routing**: Different from addresses based on message type\n- **Global Authentication**: Manage any tenant from a single authenticated session\n\n## Authentication\nAll API endpoints require a JWT Bearer token. The token should contain admin-level permissions to access any tenant.\nFor Kafka endpoints, an additional X-Kafka-API-Key header is required.\n\n## Message Types\n- `bonus`: Bonus-related notifications\n- `promo`: Promotional messages\n- `report`: Report and analytics notifications\n- `system`: System and account notifications\n- `payment`: Payment-related notifications\n- `support`: Customer support messages\n\n## Scheduling\nNotifications can be scheduled for future delivery by providing a `schedule_ts` timestamp (Unix epoch).\nImmediate notifications are processed right away, while scheduled ones are handled by the scheduler worker.\n\n## Rate Limits\nEach tenant can configure rate limits per notification type. Default limits apply if not configured.",

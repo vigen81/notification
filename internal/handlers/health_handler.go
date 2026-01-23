@@ -24,7 +24,7 @@ func NewHealthHandler(logger *logrus.Logger) *HealthHandler {
 // @Tags health
 // @Produce json
 // @Success 200 {object} models.HealthResponse "Service is healthy"
-// @Router /health [get]
+// @Router /api/v1/health [get]
 func (h *HealthHandler) HealthCheck(c *fiber.Ctx) error {
 	return c.JSON(models.HealthResponse{
 		Status:    "ok",
@@ -41,7 +41,7 @@ func (h *HealthHandler) HealthCheck(c *fiber.Ctx) error {
 // @Produce json
 // @Success 200 {object} models.HealthResponse "Service is ready to accept requests"
 // @Failure 503 {object} models.ErrorResponse "Service is not ready - dependencies not available"
-// @Router /ready [get]
+// @Router /api/v1/ready [get]
 func (h *HealthHandler) ReadinessCheck(c *fiber.Ctx) error {
 	// Here you can add checks for database, Kafka, etc.
 	return c.JSON(models.HealthResponse{
@@ -61,7 +61,7 @@ func (h *HealthHandler) ReadinessCheck(c *fiber.Ctx) error {
 // @Tags health
 // @Produce json
 // @Success 200 {object} models.HealthResponse "Service is alive"
-// @Router /live [get]
+// @Router /api/v1/live [get]
 func (h *HealthHandler) LivenessCheck(c *fiber.Ctx) error {
 	return c.JSON(models.HealthResponse{
 		Status:    "alive",

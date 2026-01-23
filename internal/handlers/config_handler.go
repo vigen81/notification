@@ -37,7 +37,7 @@ func NewConfigHandler(configRepo *repository.PartnerConfigRepository, logger *lo
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
-// @Router /config/{tenant_id} [get]
+// @Router /api/v1/config/{tenant_id} [get]
 func (h *ConfigHandler) GetConfig(c *fiber.Ctx) error {
 	tenantIDStr := c.Params("tenant_id")
 	if tenantIDStr == "" {
@@ -83,7 +83,7 @@ func (h *ConfigHandler) GetConfig(c *fiber.Ctx) error {
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
-// @Router /config/{tenant_id} [put]
+// @Router /api/v1/config/{tenant_id} [put]
 func (h *ConfigHandler) UpdateConfig(c *fiber.Ctx) error {
 	tenantIDStr := c.Params("tenant_id")
 	if tenantIDStr == "" {
@@ -159,7 +159,7 @@ func (h *ConfigHandler) UpdateConfig(c *fiber.Ctx) error {
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
-// @Router /config/{tenant_id}/providers/email [post]
+// @Router /api/v1/config/{tenant_id}/providers/email [post]
 func (h *ConfigHandler) AddEmailProvider(c *fiber.Ctx) error {
 	tenantIDStr := c.Params("tenant_id")
 	tenantID, err := strconv.ParseInt(tenantIDStr, 10, 64)
@@ -230,7 +230,7 @@ func (h *ConfigHandler) AddEmailProvider(c *fiber.Ctx) error {
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
-// @Router /config/{tenant_id}/providers/sms [post]
+// @Router /api/v1/config/{tenant_id}/providers/sms [post]
 func (h *ConfigHandler) AddSMSProvider(c *fiber.Ctx) error {
 	tenantIDStr := c.Params("tenant_id")
 	tenantID, err := strconv.ParseInt(tenantIDStr, 10, 64)
@@ -301,7 +301,7 @@ func (h *ConfigHandler) AddSMSProvider(c *fiber.Ctx) error {
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
-// @Router /config/{tenant_id}/providers/push [post]
+// @Router /api/v1/config/{tenant_id}/providers/push [post]
 func (h *ConfigHandler) AddPushProvider(c *fiber.Ctx) error {
 	tenantIDStr := c.Params("tenant_id")
 	tenantID, err := strconv.ParseInt(tenantIDStr, 10, 64)
@@ -372,7 +372,7 @@ func (h *ConfigHandler) AddPushProvider(c *fiber.Ctx) error {
 // @Failure 404 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
-// @Router /config/{tenant_id}/providers/{type}/{name} [delete]
+// @Router /api/v1/config/{tenant_id}/providers/{type}/{name} [delete]
 func (h *ConfigHandler) RemoveProvider(c *fiber.Ctx) error {
 	tenantIDStr := c.Params("tenant_id")
 	tenantID, err := strconv.ParseInt(tenantIDStr, 10, 64)

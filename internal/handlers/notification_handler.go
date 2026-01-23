@@ -45,7 +45,7 @@ func NewNotificationHandler(
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
-// @Router /notifications/send [post]
+// @Router /api/v1/notifications/send [post]
 func (h *NotificationHandler) SendNotification(c *fiber.Ctx) error {
 	var req models.NotificationRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -119,7 +119,7 @@ func (h *NotificationHandler) SendNotification(c *fiber.Ctx) error {
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
-// @Router /notifications/batch [post]
+// @Router /api/v1/notifications/batch [post]
 func (h *NotificationHandler) SendBatchNotification(c *fiber.Ctx) error {
 	var req models.BatchNotificationRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -196,7 +196,7 @@ func (h *NotificationHandler) SendBatchNotification(c *fiber.Ctx) error {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Security BearerAuth
-// @Router /notifications/status/{request_id} [get]
+// @Router /api/v1/notifications/status/{request_id} [get]
 func (h *NotificationHandler) GetNotificationStatus(c *fiber.Ctx) error {
 	requestID := c.Params("request_id")
 	if requestID == "" {
@@ -245,7 +245,7 @@ func (h *NotificationHandler) GetNotificationStatus(c *fiber.Ctx) error {
 // @Failure 400 {object} models.ErrorResponse
 // @Failure 404 {object} models.ErrorResponse
 // @Security BearerAuth
-// @Router /notifications/batch/{batch_id}/status [get]
+// @Router /api/v1/notifications/batch/{batch_id}/status [get]
 func (h *NotificationHandler) GetBatchStatus(c *fiber.Ctx) error {
 	batchID := c.Params("batch_id")
 	if batchID == "" {
@@ -318,7 +318,7 @@ func (h *NotificationHandler) GetBatchStatus(c *fiber.Ctx) error {
 // @Failure 401 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
-// @Router /kafka/publish [post]
+// @Router /api/v1/kafka/publish [post]
 func (h *NotificationHandler) PublishToKafka(c *fiber.Ctx) error {
 	var req models.KafkaNotificationRequest
 	if err := c.BodyParser(&req); err != nil {
