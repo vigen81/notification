@@ -1,5 +1,5 @@
 variables:
-  HELM_PATH: helm/base/apps/golang-notification/api
+  HELM_PATH: helm/base/apps/notification-service/api
 
 stages:
   - build
