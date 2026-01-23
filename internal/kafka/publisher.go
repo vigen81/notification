@@ -37,6 +37,7 @@ func NewPublisher(cfg *config.Config) (*Publisher, error) {
 			return nil, fmt.Errorf("failed to connect to kafka broker %s: %w", broker, err)
 		}
 		conn.Close()
+		fmt.Println("Connected to broker:", broker)
 	}
 
 	saramaConfig := sarama.NewConfig()
