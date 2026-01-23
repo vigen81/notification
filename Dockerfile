@@ -1,23 +1,55 @@
-FROM golang:1.24  AS build
-ENV CGO_ENABLED=0 GOOS=linux
+# Updated Dockerfile for AWS Parameter Store Configuration
+FROM golang:1.24.4-alpine AS builder
+
+# Install dependencies including Git and build tools
+RUN apk add --no-cache git ca-certificates tzdata
+
 WORKDIR /app
 
-RUN apt update && apt install -y make ca-certificates tzdata
+# Copy go mod files first
+COPY go.mod go.sum ./
 
-COPY ./go.mod ./go.mod
-COPY ./go.sum ./go.sum
-
+# Download dependencies
 RUN go mod download
 
+# Install swag for swagger generation
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
+# Copy source code
 COPY . .
 
-RUN go build -o app
+# Generate Ent code first
+RUN go generate ./ent
 
-FROM scratch
-COPY --from=build /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=build /etc/ssl/certs /etc/ssl/certs
-COPY --from=build /app/roles /roles
-COPY --from=build /app/static /static
-COPY --from=build /app/app /app
+# Create empty docs package to satisfy import
+RUN mkdir -p docs && echo "package docs" > docs/docs.go
 
-ENTRYPOINT ["/app"]
+# Generate Swagger docs (this will overwrite the empty docs.go)
+RUN swag init -g cmd/server/main.go -o docs/
+
+# Tidy modules after all generation
+RUN go mod tidy
+
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o notification-engine ./cmd/server
+
+# Final stage
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates tzdata
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /app/notification-engine .
+
+# Create non-root user
+RUN addgroup -g 1001 -S notifier && \a dduser -S notifier -u 1001 -G notifier
+
+USER notifier
+
+
+# Environment variables for AWS Parameter Store
+ENV AWS_REGION=eu-central-1
+
+
+CMD ["./notification-engine"]
