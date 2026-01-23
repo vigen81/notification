@@ -42,6 +42,8 @@ func NewPublisher(cfg *config.Config) (*Publisher, error) {
 
 	saramaConfig := sarama.NewConfig()
 	saramaConfig.Version = sarama.V2_8_0_0
+	saramaConfig.Producer.Return.Successes = true
+	saramaConfig.Producer.Return.Errors = true
 	saramaConfig.Net.TLS.Enable = true
 	saramaConfig.Net.SASL.Enable = true
 	saramaConfig.Net.SASL.Mechanism = sarama.SASLTypeOAuth
