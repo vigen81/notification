@@ -41,10 +41,11 @@ func NewPublisher(cfg *config.Config) (*Publisher, error) {
 	}
 
 	saramaConfig := sarama.NewConfig()
-	saramaConfig.Producer.Return.Successes = true
-	saramaConfig.Producer.Return.Errors = true
+	saramaConfig.Version = sarama.V2_8_0_0
+	saramaConfig.Net.TLS.Enable = true
+	saramaConfig.Net.SASL.Enable = true
+	saramaConfig.Net.SASL.Mechanism = sarama.SASLTypeOAuth
 	saramaConfig.Net.SASL.TokenProvider = &MSKAccessTokenProvider{Region: "eu-central-1"}
-	saramaConfig.Net.TLS.Enable = false
 
 	publisherConfig := kafka.PublisherConfig{
 		Brokers:               cfg.Kafka.Brokers,
