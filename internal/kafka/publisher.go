@@ -44,7 +44,7 @@ func NewPublisher(cfg *config.Config) (*Publisher, error) {
 	saramaConfig.Version = sarama.V2_8_0_0
 	saramaConfig.Producer.Return.Successes = true
 	saramaConfig.Producer.Return.Errors = true
-	saramaConfig.Net.TLS.Enable = true
+	saramaConfig.Net.TLS.Enable = false
 	saramaConfig.Net.SASL.Enable = true
 	saramaConfig.Net.SASL.Mechanism = sarama.SASLTypeOAuth
 	saramaConfig.Net.SASL.TokenProvider = &MSKAccessTokenProvider{Region: "eu-central-1"}
