@@ -43,9 +43,7 @@ WORKDIR /app
 COPY --from=builder /app/notification-engine .
 
 # Create non-root user
-RUN addgroup -g 1001 -S notifier && \a dduser -S notifier -u 1001 -G notifier
 
-USER notifier
 
 
 # Environment variables for AWS Parameter Store
