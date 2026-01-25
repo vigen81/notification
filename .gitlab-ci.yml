@@ -1,66 +1,38 @@
 variables:
   HELM_PATH: helm/base/apps/notification-service/api
 
+
 stages:
-  - build
-  - migration
-  - deploy
+  - dev:kubernetes
+  - prod:build
+  - prod:deploy
 
 include:
   - project: 'devops/templates'
     ref: 'ec2'
     file:
-      - 'arm-build-ci.yml'
-      - 'arm-migration-ci.yml'
-      - 'arm-deploy-ci.yml'
+      - 'dev-arm-ci.yml'
+      - 'prod-arm-build.yml'
+      - 'prod-arm-deploy.yml'
 
-build:
-  stage: build
-  rules:
-    - if: '$CI_COMMIT_BRANCH  == "notification-engine"'
-      variables:
-        DOCKER_REPOSITORY: "golang-notification-dev"
-      when: always
-    - if: '$CI_COMMIT_BRANCH  == "main"'
-      variables:
-        DOCKER_REPOSITORY: "golang-notification"
-      when: always
-    - when: never
-
-dev:migration:
-  stage: migration
-  needs:
-    - build
-  rules:
-    - if: '$CI_COMMIT_BRANCH  == "notification-engine"'
-      variables:
-        DOCKER_REPOSITORY: "golang-notification-dev"
-      when: always
-    - when: never
-
-dev:deploy:
-  stage: deploy
-  needs:
-    - dev:migration
+dev:kubernetes:
+  stage: dev:kubernetes
+  variables:
+    DOCKER_REPOSITORY: "golang-notificaton-dev"
+  when: always
   only:
     - notification-engine
 
-prod:migration:
-  stage: migration
-  when: manual
-  needs:
-    - build
-  rules:
-    - if: '$CI_COMMIT_BRANCH  == "main"'
-      variables:
-        DOCKER_REPOSITORY: "golang-notification"
-      when: always
-    - when: never
+prod:build:
+  stage: prod:build
+  when: always
+  variables:
+    DOCKER_REPOSITORY: "golang-notificaton"
+  only:
+    - master
 
 prod:deploy:
-  stage: deploy
+  stage: prod:deploy
   when: manual
-  needs:
-    - prod:migration
   only:
-    - main
+    - master
