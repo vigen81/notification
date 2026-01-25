@@ -5,9 +5,9 @@ import (
 	"time"
 )
 
-type BufItem interface{}
+type BufItem any
 
-type Service[T BufItem] struct {
+type Service[T any] struct {
 	buffer      chan T
 	ready       chan struct{}
 	maxSize     int
@@ -19,7 +19,7 @@ type Service[T BufItem] struct {
 const defaultMaxBufferSize = 50
 
 // NewService creates a new buffer service
-func NewService[T BufItem](maxSize int, flushPeriod time.Duration) *Service[T] {
+func NewService[T any](maxSize int, flushPeriod time.Duration) *Service[T] {
 	if maxSize <= 0 {
 		maxSize = defaultMaxBufferSize
 	}
@@ -60,18 +60,30 @@ func (s *Service[T]) Push(msg T) bool {
 
 func (s *Service[T]) Pop() []T {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
+	closed := s.closed
+	s.mu.RUnlock()
 
-	if s.closed {
+	// Even if closed, we might want to drain what's left
+	// But the original code returns nil if closed.
+	// Let's stick to returning nil if closed, or maybe drain if closed?
+	// Usually if closed, we want to drain the last bits.
+	if closed && len(s.buffer) == 0 {
 		return nil
 	}
 
-	result := make([]T, 0)
+	capacity := len(s.buffer)
+	if capacity == 0 {
+		capacity = 0
+	}
+	result := make([]T, 0, capacity)
 
 	// Drain the buffer
 	for {
 		select {
-		case item := <-s.buffer:
+		case item, ok := <-s.buffer:
+			if !ok {
+				return result
+			}
 			result = append(result, item)
 		default:
 			return result
@@ -101,8 +113,8 @@ func (s *Service[T]) Close() {
 
 	if !s.closed {
 		s.closed = true
-		close(s.buffer)
-		close(s.ready)
+		// We don't close the channels to avoid panics in Push/signalReady.
+		// Instead, we rely on s.closed check.
 	}
 }
 
@@ -110,7 +122,6 @@ func (s *Service[T]) signalReady() {
 	select {
 	case s.ready <- struct{}{}:
 	default:
-		// Channel is full, signal already sent
 	}
 }
 
@@ -121,14 +132,13 @@ func (s *Service[T]) startPeriodicFlush() {
 	for range ticker.C {
 		s.mu.RLock()
 		closed := s.closed
-		empty := len(s.buffer) == 0
 		s.mu.RUnlock()
 
 		if closed {
 			return
 		}
 
-		if !empty {
+		if len(s.buffer) > 0 {
 			s.signalReady()
 		}
 	}

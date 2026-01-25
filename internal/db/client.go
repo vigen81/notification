@@ -14,8 +14,6 @@ import (
 	"gitlab.smartbet.am/golang/notification/internal/config"
 )
 
-var Database *ent.Client
-
 func NewDatabase(cfg *config.Config) (*sql.DB, error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
 		cfg.Database.User,
@@ -52,7 +50,6 @@ func NewEntClient(db *sql.DB, logger *logrus.Logger) (*ent.Client, error) {
 		return nil, fmt.Errorf("failed to create schema: %w", err)
 	}
 
-	Database = client
 	if logger != nil {
 		logger.Info("Database connection established and schema created")
 	}
