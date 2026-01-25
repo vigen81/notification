@@ -18,7 +18,7 @@ include:
 dev:kubernetes:
   stage: dev:kubernetes
   variables:
-    DOCKER_REPOSITORY: "golang-notificaton-dev"
+    DOCKER_REPOSITORY: "golang-notification-dev"
   when: always
   only:
     - notification-engine
@@ -27,7 +27,7 @@ prod:build:
   stage: prod:build
   when: always
   variables:
-    DOCKER_REPOSITORY: "golang-notificaton"
+    DOCKER_REPOSITORY: "golang-notification"
   only:
     - master
 
