@@ -31,7 +31,7 @@ RUN swag init -g cmd/server/main.go -o docs/
 RUN go mod tidy
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o notification-engine ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux go build -o notification-engine ./cmd/server
 
 # Final stage
 FROM alpine:latest
