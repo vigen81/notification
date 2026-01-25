@@ -1,5 +1,5 @@
 # Updated Dockerfile for AWS Parameter Store Configuration
-FROM 499144353299.dkr.ecr.eu-central-1.amazonaws.com/docker-hub/library/golang AS builder
+FROM 499144353299.dkr.ecr.eu-central-1.amazonaws.com/docker-hub/library/golang:1.25-alpine AS builder
 
 # Install dependencies including Git and build tools
 RUN apk add --no-cache git ca-certificates tzdata
