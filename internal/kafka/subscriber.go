@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"os"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -32,14 +33,15 @@ func NewSubscriber(cfg *config.Config) (*Subscriber, error) {
 
 	saramaConfig := sarama.NewConfig()
 	saramaConfig.Consumer.Offsets.Initial = sarama.OffsetOldest
-	saramaConfig.Net.TLS.Enable = true
-	saramaConfig.Net.TLS.Config = &tls.Config{
-		InsecureSkipVerify: true, // Equivalent to ssl.endpoint.identification.algorithm=
+	if os.Getenv("LOCAL") != "true" {
+		saramaConfig.Net.TLS.Enable = true
+		saramaConfig.Net.TLS.Config = &tls.Config{
+			InsecureSkipVerify: true, // Equivalent to ssl.endpoint.identification.algorithm=
+		}
+		saramaConfig.Net.SASL.Enable = true
+		saramaConfig.Net.SASL.Mechanism = sarama.SASLTypeOAuth
+		saramaConfig.Net.SASL.TokenProvider = &MSKAccessTokenProvider{Region: "eu-central-1"}
 	}
-	saramaConfig.Net.SASL.Enable = true
-	saramaConfig.Net.SASL.Mechanism = sarama.SASLTypeOAuth
-	saramaConfig.Net.SASL.TokenProvider = &MSKAccessTokenProvider{Region: "eu-central-1"}
-
 	subscriberConfig := kafka.SubscriberConfig{
 		Brokers:               cfg.Kafka.Brokers,
 		Unmarshaler:           kafka.DefaultMarshaler{},
