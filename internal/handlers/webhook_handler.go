@@ -1,9 +1,21 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 	"gitlab.smartbet.am/golang/notification/internal/services"
+)
+
+const (
+	MsgStatusFailed    = 0
+	MsgStatusSent      = 1
+	MsgStatusDelivered = 2
+	MsgStatusOpened    = 3
 )
 
 type SendGridEvent struct {
@@ -48,6 +60,8 @@ func (h *WebhookHandler) HandleSendGridWebhook(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid payload"})
 	}
 
+	client := &http.Client{Timeout: 10 * time.Second}
+
 	for _, event := range events {
 		h.logger.WithFields(logrus.Fields{
 			"event":      event.Event,
@@ -56,12 +70,59 @@ func (h *WebhookHandler) HandleSendGridWebhook(c *fiber.Ctx) error {
 			"sg_msg_id":  event.SGMsgID,
 		}).Info("received sendgrid webhook event")
 
-		if event.RequestID != "" {
-			if err := h.notificationService.UpdateStatusFromWebhook(c.Context(), event.RequestID, event.Event); err != nil {
-				h.logger.WithError(err).Error("failed to update notification status")
+		/*
+			if event.RequestID != "" {
+				if err := h.notificationService.UpdateStatusFromWebhook(c.Context(), event.RequestID, event.Event); err != nil {
+					h.logger.WithError(err).Error("failed to update notification status")
+				}
 			}
+		*/
+
+		// Map SendGrid event to our status
+		status := mapEventToStatus(event.Event)
+		if status == -1 {
+			continue // Skip unknown events
+		}
+
+		// Prepare request to external service
+		payload := map[string]interface{}{
+			"provider":   "sendgrid",
+			"message_id": event.SGMsgID,
+			"status":     status,
+		}
+
+		jsonData, err := json.Marshal(payload)
+		if err != nil {
+			h.logger.WithError(err).Error("failed to marshal webhook payload")
+			continue
+		}
+
+		resp, err := client.Post("http://platform/notification/change_status", "application/json", bytes.NewBuffer(jsonData))
+		if err != nil {
+			h.logger.WithError(err).Error("failed to send status update to platform")
+			continue
+		}
+		resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			h.logger.WithField("status_code", resp.StatusCode).Error("platform returned non-OK status")
 		}
 	}
 
 	return c.JSON(fiber.Map{"status": "ok"})
+}
+
+func mapEventToStatus(event string) int {
+	switch event {
+	case "processed", "sent":
+		return MsgStatusSent
+	case "delivered":
+		return MsgStatusDelivered
+	case "open":
+		return MsgStatusOpened
+	case "bounce", "dropped":
+		return MsgStatusFailed
+	default:
+		return -1
+	}
 }
