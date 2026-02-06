@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"time"
 
@@ -64,10 +65,11 @@ func (h *WebhookHandler) HandleSendGridWebhook(c *fiber.Ctx) error {
 
 	for _, event := range events {
 		h.logger.WithFields(logrus.Fields{
-			"event":      event.Event,
-			"email":      event.Email,
-			"request_id": event.RequestID,
-			"sg_msg_id":  event.SGMsgID,
+			"event":        event.Event,
+			"email":        event.Email,
+			"request_id":   event.RequestID,
+			"sg_msg_id":    event.SGMsgID,
+			"event_object": event,
 		}).Info("received sendgrid webhook event")
 
 		/*
@@ -102,10 +104,29 @@ func (h *WebhookHandler) HandleSendGridWebhook(c *fiber.Ctx) error {
 			h.logger.WithError(err).Error("failed to send status update to platform")
 			continue
 		}
+		body, readErr := io.ReadAll(resp.Body)
 		resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
 			h.logger.WithField("status_code", resp.StatusCode).Error("platform returned non-OK status")
+			continue
+		}
+
+		if readErr != nil {
+			h.logger.WithError(readErr).Error("failed to read platform response body")
+			continue
+		}
+
+		var platformResponse struct {
+			Status int `json:"status"`
+		}
+		if err := json.Unmarshal(body, &platformResponse); err != nil {
+			h.logger.WithError(err).Error("failed to parse platform response body")
+			continue
+		}
+
+		if platformResponse.Status == 0 {
+			h.logger.Error("platform response status indicates failure")
 		}
 	}
 
