@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -64,6 +65,10 @@ func (h *WebhookHandler) HandleSendGridWebhook(c *fiber.Ctx) error {
 	client := &http.Client{Timeout: 10 * time.Second}
 
 	for _, event := range events {
+		if dotIndex := strings.Index(event.SGMsgID, "."); dotIndex != -1 {
+			event.SGMsgID = event.SGMsgID[:dotIndex]
+		}
+
 		h.logger.WithFields(logrus.Fields{
 			"event":        event.Event,
 			"email":        event.Email,
