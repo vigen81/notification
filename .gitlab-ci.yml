@@ -1,42 +1,6 @@
 variables:
   HELM_PATH: helm/base/apps/notification-service/api
 
-
-# stages:
-#   - dev:kubernetes
-#   - prod:build
-#   - prod:deploy
-
-# include:
-#   - project: 'devops/templates'
-#     ref: 'ec2'
-#     file:
-#       - 'dev-arm-ci.yml'
-#       - 'prod-arm-build.yml'
-#       - 'prod-arm-deploy.yml'
-
-# dev:kubernetes:
-#   stage: dev:kubernetes
-#   variables:
-#     DOCKER_REPOSITORY: "golang-notification-dev"
-#   when: always
-#   only:
-#     - notification-engine
-
-# prod:build:
-#   stage: prod:build
-#   when: always
-#   variables:
-#     DOCKER_REPOSITORY: "golang-notification"
-#   only:
-#     - master
-
-# prod:deploy:
-#   stage: prod:deploy
-#   when: manual
-#   only:
-#     - master
-
 stages:
   - build
   - migration
