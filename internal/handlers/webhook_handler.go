@@ -22,6 +22,7 @@ const (
 
 type SendGridEvent struct {
 	Email     string `json:"email"`
+	ToEmail   string `json:"to_email,omitempty"`
 	Timestamp int64  `json:"timestamp"`
 	Event     string `json:"event"` // open, click, delivered, bounce, dropped, etc.
 	SGEventID string `json:"sg_event_id"`
@@ -72,6 +73,7 @@ func (h *WebhookHandler) HandleSendGridWebhook(c *fiber.Ctx) error {
 		h.logger.WithFields(logrus.Fields{
 			"event":        event.Event,
 			"email":        event.Email,
+			"to_email":     event.ToEmail,
 			"request_id":   event.RequestID,
 			"sg_msg_id":    event.SGMsgID,
 			"event_object": event,
@@ -96,6 +98,9 @@ func (h *WebhookHandler) HandleSendGridWebhook(c *fiber.Ctx) error {
 			"provider":   "sendgrid",
 			"message_id": event.SGMsgID,
 			"status":     status,
+		}
+		if event.ToEmail != "" {
+			payload["to_email"] = event.ToEmail
 		}
 
 		jsonData, err := json.Marshal(payload)
