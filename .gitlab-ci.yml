@@ -78,7 +78,7 @@ dev:deploy:
   needs:
     - dev:migration
   only:
-    - dev
+    - notification-engine
 
 prod:migration:
   stage: migration
