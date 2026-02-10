@@ -144,7 +144,7 @@ func mapEventToStatus(event string) int {
 		return MsgStatusSent
 	case "delivered":
 		return MsgStatusDelivered
-	case "click":
+	case "open":
 		return MsgStatusOpened
 	case "bounce", "dropped":
 		return MsgStatusFailed
