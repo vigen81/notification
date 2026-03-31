@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"gitlab.smartbet.am/golang/notification/ent/notification"
+	"gitlab.smartbet.am/golang/notification/ent/partnerconfig"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -69,11 +70,12 @@ var (
 	columnCheck sql.ColumnCheck
 )
 
-// columnChecker checks if the column exists in the given table.
+// checkColumn checks if the column exists in the given table.
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			notification.Table: notification.ValidColumn,
+			notification.Table:  notification.ValidColumn,
+			partnerconfig.Table: partnerconfig.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

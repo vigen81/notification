@@ -52,6 +52,10 @@ type Notification struct {
 	Meta *schema.NotificationMeta `json:"meta,omitempty"`
 	// ErrorMessage holds the value of the "error_message" field.
 	ErrorMessage *string `json:"error_message,omitempty"`
+	// BatchID holds the value of the "batch_id" field.
+	BatchID string `json:"batch_id,omitempty"`
+	// RetryCount holds the value of the "retry_count" field.
+	RetryCount   int `json:"retry_count,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -62,9 +66,9 @@ func (*Notification) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case notification.FieldMeta:
 			values[i] = new([]byte)
-		case notification.FieldID, notification.FieldTenantID, notification.FieldScheduleTs:
+		case notification.FieldID, notification.FieldTenantID, notification.FieldScheduleTs, notification.FieldRetryCount:
 			values[i] = new(sql.NullInt64)
-		case notification.FieldBody, notification.FieldHeadline, notification.FieldName, notification.FieldFrom, notification.FieldReplyTo, notification.FieldTag, notification.FieldRequestID, notification.FieldType, notification.FieldStatus, notification.FieldErrorMessage:
+		case notification.FieldBody, notification.FieldHeadline, notification.FieldName, notification.FieldFrom, notification.FieldReplyTo, notification.FieldTag, notification.FieldRequestID, notification.FieldType, notification.FieldStatus, notification.FieldErrorMessage, notification.FieldBatchID:
 			values[i] = new(sql.NullString)
 		case notification.FieldCreateTime, notification.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
@@ -191,6 +195,18 @@ func (n *Notification) assignValues(columns []string, values []any) error {
 				n.ErrorMessage = new(string)
 				*n.ErrorMessage = value.String
 			}
+		case notification.FieldBatchID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field batch_id", values[i])
+			} else if value.Valid {
+				n.BatchID = value.String
+			}
+		case notification.FieldRetryCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field retry_count", values[i])
+			} else if value.Valid {
+				n.RetryCount = int(value.Int64)
+			}
 		default:
 			n.selectValues.Set(columns[i], values[i])
 		}
@@ -278,6 +294,12 @@ func (n *Notification) String() string {
 		builder.WriteString("error_message=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	builder.WriteString("batch_id=")
+	builder.WriteString(n.BatchID)
+	builder.WriteString(", ")
+	builder.WriteString("retry_count=")
+	builder.WriteString(fmt.Sprintf("%v", n.RetryCount))
 	builder.WriteByte(')')
 	return builder.String()
 }

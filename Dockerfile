@@ -1,29 +1,53 @@
-FROM golang:alpine AS build
-ENV CGO_ENABLED=0 GOOS=linux
-WORKDIR /go/src/app
-RUN apk add make ca-certificates tzdata git
+# Updated Dockerfile for AWS Parameter Store Configuration
+FROM 499144353299.dkr.ecr.eu-central-1.amazonaws.com/docker-hub/library/golang:1.25-alpine AS builder
 
-ENV GOPRIVATE="gitlab.com/healthcare-integration"
-ARG gitlab_user
-ENV gitlab_user=$gitlab_user
-ARG gitlab_personal_token
-ENV gitlab_personal_token=$gitlab_personal_token
-RUN git config --global url."https://${gitlab_user}:${gitlab_personal_token}@gitlab.com:".insteadOf "https://gitlab.com"
+# Install dependencies including Git and build tools
+RUN apk add --no-cache git ca-certificates tzdata
 
+WORKDIR /app
 
-
+# Copy go mod files first
 COPY go.mod go.sum ./
+
+# Download dependencies
 RUN go mod download
+
+# Install swag for swagger generation
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
+# Copy source code
 COPY . .
-RUN make  build
+
+# Generate Ent code first
+RUN go generate ./ent
+
+# Create empty docs package to satisfy import
+RUN mkdir -p docs && echo "package docs" > docs/docs.go
+
+# Generate Swagger docs (this will overwrite the empty docs.go)
+RUN swag init -g cmd/server/main.go -o docs/
+
+# Tidy modules after all generation
+RUN go mod tidy
+
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -o notification-engine ./cmd/server
+
+# Final stage
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates tzdata
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /app/notification-engine .
+
+# Create non-root user
 
 
 
-FROM scratch
-COPY --from=build /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=build /etc/ssl/certs /etc/ssl/certs
-COPY --from=build /go/src/app/app /app
+# Environment variables for AWS Parameter Store
+ENV AWS_REGION=eu-central-1
 
 
-ENTRYPOINT ["/app"]
-
+CMD ["./notification-engine"]

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gitlab.smartbet.am/golang/notification/ent/notification"
+	"gitlab.smartbet.am/golang/notification/ent/partnerconfig"
 	"gitlab.smartbet.am/golang/notification/ent/schema"
 )
 
@@ -28,4 +29,31 @@ func init() {
 	notification.DefaultUpdateTime = notificationDescUpdateTime.Default.(func() time.Time)
 	// notification.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
 	notification.UpdateDefaultUpdateTime = notificationDescUpdateTime.UpdateDefault.(func() time.Time)
+	// notificationDescRetryCount is the schema descriptor for retry_count field.
+	notificationDescRetryCount := notificationFields[15].Descriptor()
+	// notification.DefaultRetryCount holds the default value on creation for the retry_count field.
+	notification.DefaultRetryCount = notificationDescRetryCount.Default.(int)
+	partnerconfigMixin := schema.PartnerConfig{}.Mixin()
+	partnerconfigMixinFields0 := partnerconfigMixin[0].Fields()
+	_ = partnerconfigMixinFields0
+	partnerconfigFields := schema.PartnerConfig{}.Fields()
+	_ = partnerconfigFields
+	// partnerconfigDescCreateTime is the schema descriptor for create_time field.
+	partnerconfigDescCreateTime := partnerconfigMixinFields0[0].Descriptor()
+	// partnerconfig.DefaultCreateTime holds the default value on creation for the create_time field.
+	partnerconfig.DefaultCreateTime = partnerconfigDescCreateTime.Default.(func() time.Time)
+	// partnerconfigDescUpdateTime is the schema descriptor for update_time field.
+	partnerconfigDescUpdateTime := partnerconfigMixinFields0[1].Descriptor()
+	// partnerconfig.DefaultUpdateTime holds the default value on creation for the update_time field.
+	partnerconfig.DefaultUpdateTime = partnerconfigDescUpdateTime.Default.(func() time.Time)
+	// partnerconfig.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	partnerconfig.UpdateDefaultUpdateTime = partnerconfigDescUpdateTime.UpdateDefault.(func() time.Time)
+	// partnerconfigDescEnabled is the schema descriptor for enabled field.
+	partnerconfigDescEnabled := partnerconfigFields[7].Descriptor()
+	// partnerconfig.DefaultEnabled holds the default value on creation for the enabled field.
+	partnerconfig.DefaultEnabled = partnerconfigDescEnabled.Default.(bool)
+	// partnerconfigDescID is the schema descriptor for id field.
+	partnerconfigDescID := partnerconfigFields[0].Descriptor()
+	// partnerconfig.DefaultID holds the default value on creation for the id field.
+	partnerconfig.DefaultID = partnerconfigDescID.Default.(string)
 }

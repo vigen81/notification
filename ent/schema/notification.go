@@ -2,9 +2,9 @@ package schema
 
 import (
 	"encoding/json"
-	"entgo.io/ent/dialect/entsql"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	"entgo.io/ent/schema/mixin"
@@ -32,8 +32,6 @@ type NotificationMeta struct {
 	Data       json.RawMessage        `json:"data,omitempty"`
 }
 
-type Map map[string]interface{}
-
 // Fields of the Notification.
 func (Notification) Fields() []ent.Field {
 	return []ent.Field{
@@ -44,8 +42,6 @@ func (Notification) Fields() []ent.Field {
 		field.String("from").Optional(),
 		field.String("reply_to").Optional(),
 		field.String("tag").Optional(),
-
-		// field.String("address"),
 		field.Text("address").GoType(types.Address("")),
 		field.String("request_id").Unique(),
 		field.Int64("schedule_ts").Optional().Nillable(),
@@ -53,6 +49,8 @@ func (Notification) Fields() []ent.Field {
 		field.Enum("status").Values("ACTIVE", "COMPLETED", "CANCEL", "PENDING", "FAILED").Default("PENDING"),
 		field.JSON("meta", &NotificationMeta{}).Optional(),
 		field.String("error_message").Nillable().Optional(),
+		field.String("batch_id").Optional(),
+		field.Int("retry_count").Default(0),
 	}
 }
 
@@ -71,5 +69,8 @@ func (Notification) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("request_id").Annotations(entsql.Prefix(20)),
 		index.Fields("schedule_ts", "status"),
+		index.Fields("tenant_id", "status"),
+		index.Fields("batch_id"),
+		index.Fields("type", "status"),
 	}
 }

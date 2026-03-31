@@ -286,6 +286,47 @@ func (nu *NotificationUpdate) ClearErrorMessage() *NotificationUpdate {
 	return nu
 }
 
+// SetBatchID sets the "batch_id" field.
+func (nu *NotificationUpdate) SetBatchID(s string) *NotificationUpdate {
+	nu.mutation.SetBatchID(s)
+	return nu
+}
+
+// SetNillableBatchID sets the "batch_id" field if the given value is not nil.
+func (nu *NotificationUpdate) SetNillableBatchID(s *string) *NotificationUpdate {
+	if s != nil {
+		nu.SetBatchID(*s)
+	}
+	return nu
+}
+
+// ClearBatchID clears the value of the "batch_id" field.
+func (nu *NotificationUpdate) ClearBatchID() *NotificationUpdate {
+	nu.mutation.ClearBatchID()
+	return nu
+}
+
+// SetRetryCount sets the "retry_count" field.
+func (nu *NotificationUpdate) SetRetryCount(i int) *NotificationUpdate {
+	nu.mutation.ResetRetryCount()
+	nu.mutation.SetRetryCount(i)
+	return nu
+}
+
+// SetNillableRetryCount sets the "retry_count" field if the given value is not nil.
+func (nu *NotificationUpdate) SetNillableRetryCount(i *int) *NotificationUpdate {
+	if i != nil {
+		nu.SetRetryCount(*i)
+	}
+	return nu
+}
+
+// AddRetryCount adds i to the "retry_count" field.
+func (nu *NotificationUpdate) AddRetryCount(i int) *NotificationUpdate {
+	nu.mutation.AddRetryCount(i)
+	return nu
+}
+
 // Mutation returns the NotificationMutation object of the builder.
 func (nu *NotificationUpdate) Mutation() *NotificationMutation {
 	return nu.mutation
@@ -428,6 +469,18 @@ func (nu *NotificationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nu.mutation.ErrorMessageCleared() {
 		_spec.ClearField(notification.FieldErrorMessage, field.TypeString)
+	}
+	if value, ok := nu.mutation.BatchID(); ok {
+		_spec.SetField(notification.FieldBatchID, field.TypeString, value)
+	}
+	if nu.mutation.BatchIDCleared() {
+		_spec.ClearField(notification.FieldBatchID, field.TypeString)
+	}
+	if value, ok := nu.mutation.RetryCount(); ok {
+		_spec.SetField(notification.FieldRetryCount, field.TypeInt, value)
+	}
+	if value, ok := nu.mutation.AddedRetryCount(); ok {
+		_spec.AddField(notification.FieldRetryCount, field.TypeInt, value)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, nu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -705,6 +758,47 @@ func (nuo *NotificationUpdateOne) ClearErrorMessage() *NotificationUpdateOne {
 	return nuo
 }
 
+// SetBatchID sets the "batch_id" field.
+func (nuo *NotificationUpdateOne) SetBatchID(s string) *NotificationUpdateOne {
+	nuo.mutation.SetBatchID(s)
+	return nuo
+}
+
+// SetNillableBatchID sets the "batch_id" field if the given value is not nil.
+func (nuo *NotificationUpdateOne) SetNillableBatchID(s *string) *NotificationUpdateOne {
+	if s != nil {
+		nuo.SetBatchID(*s)
+	}
+	return nuo
+}
+
+// ClearBatchID clears the value of the "batch_id" field.
+func (nuo *NotificationUpdateOne) ClearBatchID() *NotificationUpdateOne {
+	nuo.mutation.ClearBatchID()
+	return nuo
+}
+
+// SetRetryCount sets the "retry_count" field.
+func (nuo *NotificationUpdateOne) SetRetryCount(i int) *NotificationUpdateOne {
+	nuo.mutation.ResetRetryCount()
+	nuo.mutation.SetRetryCount(i)
+	return nuo
+}
+
+// SetNillableRetryCount sets the "retry_count" field if the given value is not nil.
+func (nuo *NotificationUpdateOne) SetNillableRetryCount(i *int) *NotificationUpdateOne {
+	if i != nil {
+		nuo.SetRetryCount(*i)
+	}
+	return nuo
+}
+
+// AddRetryCount adds i to the "retry_count" field.
+func (nuo *NotificationUpdateOne) AddRetryCount(i int) *NotificationUpdateOne {
+	nuo.mutation.AddRetryCount(i)
+	return nuo
+}
+
 // Mutation returns the NotificationMutation object of the builder.
 func (nuo *NotificationUpdateOne) Mutation() *NotificationMutation {
 	return nuo.mutation
@@ -877,6 +971,18 @@ func (nuo *NotificationUpdateOne) sqlSave(ctx context.Context) (_node *Notificat
 	}
 	if nuo.mutation.ErrorMessageCleared() {
 		_spec.ClearField(notification.FieldErrorMessage, field.TypeString)
+	}
+	if value, ok := nuo.mutation.BatchID(); ok {
+		_spec.SetField(notification.FieldBatchID, field.TypeString, value)
+	}
+	if nuo.mutation.BatchIDCleared() {
+		_spec.ClearField(notification.FieldBatchID, field.TypeString)
+	}
+	if value, ok := nuo.mutation.RetryCount(); ok {
+		_spec.SetField(notification.FieldRetryCount, field.TypeInt, value)
+	}
+	if value, ok := nuo.mutation.AddedRetryCount(); ok {
+		_spec.AddField(notification.FieldRetryCount, field.TypeInt, value)
 	}
 	_node = &Notification{config: nuo.config}
 	_spec.Assign = _node.assignValues

@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"gitlab.smartbet.am/golang/notification/ent/notification"
+	"gitlab.smartbet.am/golang/notification/ent/partnerconfig"
 	"gitlab.smartbet.am/golang/notification/ent/predicate"
 	"gitlab.smartbet.am/golang/notification/ent/schema"
 	"gitlab.smartbet.am/golang/notification/types"
@@ -26,7 +27,8 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeNotification = "Notification"
+	TypeNotification  = "Notification"
+	TypePartnerConfig = "PartnerConfig"
 )
 
 // NotificationMutation represents an operation that mutates the Notification nodes in the graph.
@@ -53,6 +55,9 @@ type NotificationMutation struct {
 	status         *notification.Status
 	meta           **schema.NotificationMeta
 	error_message  *string
+	batch_id       *string
+	retry_count    *int
+	addretry_count *int
 	clearedFields  map[string]struct{}
 	done           bool
 	oldValue       func(context.Context) (*Notification, error)
@@ -878,6 +883,111 @@ func (m *NotificationMutation) ResetErrorMessage() {
 	delete(m.clearedFields, notification.FieldErrorMessage)
 }
 
+// SetBatchID sets the "batch_id" field.
+func (m *NotificationMutation) SetBatchID(s string) {
+	m.batch_id = &s
+}
+
+// BatchID returns the value of the "batch_id" field in the mutation.
+func (m *NotificationMutation) BatchID() (r string, exists bool) {
+	v := m.batch_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBatchID returns the old "batch_id" field's value of the Notification entity.
+// If the Notification object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationMutation) OldBatchID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBatchID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBatchID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBatchID: %w", err)
+	}
+	return oldValue.BatchID, nil
+}
+
+// ClearBatchID clears the value of the "batch_id" field.
+func (m *NotificationMutation) ClearBatchID() {
+	m.batch_id = nil
+	m.clearedFields[notification.FieldBatchID] = struct{}{}
+}
+
+// BatchIDCleared returns if the "batch_id" field was cleared in this mutation.
+func (m *NotificationMutation) BatchIDCleared() bool {
+	_, ok := m.clearedFields[notification.FieldBatchID]
+	return ok
+}
+
+// ResetBatchID resets all changes to the "batch_id" field.
+func (m *NotificationMutation) ResetBatchID() {
+	m.batch_id = nil
+	delete(m.clearedFields, notification.FieldBatchID)
+}
+
+// SetRetryCount sets the "retry_count" field.
+func (m *NotificationMutation) SetRetryCount(i int) {
+	m.retry_count = &i
+	m.addretry_count = nil
+}
+
+// RetryCount returns the value of the "retry_count" field in the mutation.
+func (m *NotificationMutation) RetryCount() (r int, exists bool) {
+	v := m.retry_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRetryCount returns the old "retry_count" field's value of the Notification entity.
+// If the Notification object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationMutation) OldRetryCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRetryCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRetryCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRetryCount: %w", err)
+	}
+	return oldValue.RetryCount, nil
+}
+
+// AddRetryCount adds i to the "retry_count" field.
+func (m *NotificationMutation) AddRetryCount(i int) {
+	if m.addretry_count != nil {
+		*m.addretry_count += i
+	} else {
+		m.addretry_count = &i
+	}
+}
+
+// AddedRetryCount returns the value that was added to the "retry_count" field in this mutation.
+func (m *NotificationMutation) AddedRetryCount() (r int, exists bool) {
+	v := m.addretry_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRetryCount resets all changes to the "retry_count" field.
+func (m *NotificationMutation) ResetRetryCount() {
+	m.retry_count = nil
+	m.addretry_count = nil
+}
+
 // Where appends a list predicates to the NotificationMutation builder.
 func (m *NotificationMutation) Where(ps ...predicate.Notification) {
 	m.predicates = append(m.predicates, ps...)
@@ -912,7 +1022,7 @@ func (m *NotificationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NotificationMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 18)
 	if m.create_time != nil {
 		fields = append(fields, notification.FieldCreateTime)
 	}
@@ -961,6 +1071,12 @@ func (m *NotificationMutation) Fields() []string {
 	if m.error_message != nil {
 		fields = append(fields, notification.FieldErrorMessage)
 	}
+	if m.batch_id != nil {
+		fields = append(fields, notification.FieldBatchID)
+	}
+	if m.retry_count != nil {
+		fields = append(fields, notification.FieldRetryCount)
+	}
 	return fields
 }
 
@@ -1001,6 +1117,10 @@ func (m *NotificationMutation) Field(name string) (ent.Value, bool) {
 		return m.Meta()
 	case notification.FieldErrorMessage:
 		return m.ErrorMessage()
+	case notification.FieldBatchID:
+		return m.BatchID()
+	case notification.FieldRetryCount:
+		return m.RetryCount()
 	}
 	return nil, false
 }
@@ -1042,6 +1162,10 @@ func (m *NotificationMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldMeta(ctx)
 	case notification.FieldErrorMessage:
 		return m.OldErrorMessage(ctx)
+	case notification.FieldBatchID:
+		return m.OldBatchID(ctx)
+	case notification.FieldRetryCount:
+		return m.OldRetryCount(ctx)
 	}
 	return nil, fmt.Errorf("unknown Notification field %s", name)
 }
@@ -1163,6 +1287,20 @@ func (m *NotificationMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetErrorMessage(v)
 		return nil
+	case notification.FieldBatchID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBatchID(v)
+		return nil
+	case notification.FieldRetryCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRetryCount(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Notification field %s", name)
 }
@@ -1177,6 +1315,9 @@ func (m *NotificationMutation) AddedFields() []string {
 	if m.addschedule_ts != nil {
 		fields = append(fields, notification.FieldScheduleTs)
 	}
+	if m.addretry_count != nil {
+		fields = append(fields, notification.FieldRetryCount)
+	}
 	return fields
 }
 
@@ -1189,6 +1330,8 @@ func (m *NotificationMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedTenantID()
 	case notification.FieldScheduleTs:
 		return m.AddedScheduleTs()
+	case notification.FieldRetryCount:
+		return m.AddedRetryCount()
 	}
 	return nil, false
 }
@@ -1211,6 +1354,13 @@ func (m *NotificationMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddScheduleTs(v)
+		return nil
+	case notification.FieldRetryCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRetryCount(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Notification numeric field %s", name)
@@ -1243,6 +1393,9 @@ func (m *NotificationMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(notification.FieldErrorMessage) {
 		fields = append(fields, notification.FieldErrorMessage)
+	}
+	if m.FieldCleared(notification.FieldBatchID) {
+		fields = append(fields, notification.FieldBatchID)
 	}
 	return fields
 }
@@ -1281,6 +1434,9 @@ func (m *NotificationMutation) ClearField(name string) error {
 		return nil
 	case notification.FieldErrorMessage:
 		m.ClearErrorMessage()
+		return nil
+	case notification.FieldBatchID:
+		m.ClearBatchID()
 		return nil
 	}
 	return fmt.Errorf("unknown Notification nullable field %s", name)
@@ -1338,6 +1494,12 @@ func (m *NotificationMutation) ResetField(name string) error {
 	case notification.FieldErrorMessage:
 		m.ResetErrorMessage()
 		return nil
+	case notification.FieldBatchID:
+		m.ResetBatchID()
+		return nil
+	case notification.FieldRetryCount:
+		m.ResetRetryCount()
+		return nil
 	}
 	return fmt.Errorf("unknown Notification field %s", name)
 }
@@ -1388,4 +1550,953 @@ func (m *NotificationMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *NotificationMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Notification edge %s", name)
+}
+
+// PartnerConfigMutation represents an operation that mutates the PartnerConfig nodes in the graph.
+type PartnerConfigMutation struct {
+	config
+	op                    Op
+	typ                   string
+	id                    *string
+	create_time           *time.Time
+	update_time           *time.Time
+	tenant_id             *int64
+	addtenant_id          *int64
+	email_providers       *[]schema.ProviderConfig
+	appendemail_providers []schema.ProviderConfig
+	sms_providers         *[]schema.ProviderConfig
+	appendsms_providers   []schema.ProviderConfig
+	push_providers        *[]schema.ProviderConfig
+	appendpush_providers  []schema.ProviderConfig
+	batch_config          **schema.BatchConfig
+	rate_limits           *map[string]schema.RateLimit
+	enabled               *bool
+	clearedFields         map[string]struct{}
+	done                  bool
+	oldValue              func(context.Context) (*PartnerConfig, error)
+	predicates            []predicate.PartnerConfig
+}
+
+var _ ent.Mutation = (*PartnerConfigMutation)(nil)
+
+// partnerconfigOption allows management of the mutation configuration using functional options.
+type partnerconfigOption func(*PartnerConfigMutation)
+
+// newPartnerConfigMutation creates new mutation for the PartnerConfig entity.
+func newPartnerConfigMutation(c config, op Op, opts ...partnerconfigOption) *PartnerConfigMutation {
+	m := &PartnerConfigMutation{
+		config:        c,
+		op:            op,
+		typ:           TypePartnerConfig,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withPartnerConfigID sets the ID field of the mutation.
+func withPartnerConfigID(id string) partnerconfigOption {
+	return func(m *PartnerConfigMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *PartnerConfig
+		)
+		m.oldValue = func(ctx context.Context) (*PartnerConfig, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().PartnerConfig.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withPartnerConfig sets the old PartnerConfig of the mutation.
+func withPartnerConfig(node *PartnerConfig) partnerconfigOption {
+	return func(m *PartnerConfigMutation) {
+		m.oldValue = func(context.Context) (*PartnerConfig, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m PartnerConfigMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m PartnerConfigMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of PartnerConfig entities.
+func (m *PartnerConfigMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *PartnerConfigMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *PartnerConfigMutation) IDs(ctx context.Context) ([]string, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []string{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().PartnerConfig.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreateTime sets the "create_time" field.
+func (m *PartnerConfigMutation) SetCreateTime(t time.Time) {
+	m.create_time = &t
+}
+
+// CreateTime returns the value of the "create_time" field in the mutation.
+func (m *PartnerConfigMutation) CreateTime() (r time.Time, exists bool) {
+	v := m.create_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreateTime returns the old "create_time" field's value of the PartnerConfig entity.
+// If the PartnerConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PartnerConfigMutation) OldCreateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreateTime: %w", err)
+	}
+	return oldValue.CreateTime, nil
+}
+
+// ResetCreateTime resets all changes to the "create_time" field.
+func (m *PartnerConfigMutation) ResetCreateTime() {
+	m.create_time = nil
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (m *PartnerConfigMutation) SetUpdateTime(t time.Time) {
+	m.update_time = &t
+}
+
+// UpdateTime returns the value of the "update_time" field in the mutation.
+func (m *PartnerConfigMutation) UpdateTime() (r time.Time, exists bool) {
+	v := m.update_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdateTime returns the old "update_time" field's value of the PartnerConfig entity.
+// If the PartnerConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PartnerConfigMutation) OldUpdateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdateTime: %w", err)
+	}
+	return oldValue.UpdateTime, nil
+}
+
+// ResetUpdateTime resets all changes to the "update_time" field.
+func (m *PartnerConfigMutation) ResetUpdateTime() {
+	m.update_time = nil
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *PartnerConfigMutation) SetTenantID(i int64) {
+	m.tenant_id = &i
+	m.addtenant_id = nil
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *PartnerConfigMutation) TenantID() (r int64, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the PartnerConfig entity.
+// If the PartnerConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PartnerConfigMutation) OldTenantID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// AddTenantID adds i to the "tenant_id" field.
+func (m *PartnerConfigMutation) AddTenantID(i int64) {
+	if m.addtenant_id != nil {
+		*m.addtenant_id += i
+	} else {
+		m.addtenant_id = &i
+	}
+}
+
+// AddedTenantID returns the value that was added to the "tenant_id" field in this mutation.
+func (m *PartnerConfigMutation) AddedTenantID() (r int64, exists bool) {
+	v := m.addtenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *PartnerConfigMutation) ResetTenantID() {
+	m.tenant_id = nil
+	m.addtenant_id = nil
+}
+
+// SetEmailProviders sets the "email_providers" field.
+func (m *PartnerConfigMutation) SetEmailProviders(sc []schema.ProviderConfig) {
+	m.email_providers = &sc
+	m.appendemail_providers = nil
+}
+
+// EmailProviders returns the value of the "email_providers" field in the mutation.
+func (m *PartnerConfigMutation) EmailProviders() (r []schema.ProviderConfig, exists bool) {
+	v := m.email_providers
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmailProviders returns the old "email_providers" field's value of the PartnerConfig entity.
+// If the PartnerConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PartnerConfigMutation) OldEmailProviders(ctx context.Context) (v []schema.ProviderConfig, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmailProviders is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmailProviders requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmailProviders: %w", err)
+	}
+	return oldValue.EmailProviders, nil
+}
+
+// AppendEmailProviders adds sc to the "email_providers" field.
+func (m *PartnerConfigMutation) AppendEmailProviders(sc []schema.ProviderConfig) {
+	m.appendemail_providers = append(m.appendemail_providers, sc...)
+}
+
+// AppendedEmailProviders returns the list of values that were appended to the "email_providers" field in this mutation.
+func (m *PartnerConfigMutation) AppendedEmailProviders() ([]schema.ProviderConfig, bool) {
+	if len(m.appendemail_providers) == 0 {
+		return nil, false
+	}
+	return m.appendemail_providers, true
+}
+
+// ClearEmailProviders clears the value of the "email_providers" field.
+func (m *PartnerConfigMutation) ClearEmailProviders() {
+	m.email_providers = nil
+	m.appendemail_providers = nil
+	m.clearedFields[partnerconfig.FieldEmailProviders] = struct{}{}
+}
+
+// EmailProvidersCleared returns if the "email_providers" field was cleared in this mutation.
+func (m *PartnerConfigMutation) EmailProvidersCleared() bool {
+	_, ok := m.clearedFields[partnerconfig.FieldEmailProviders]
+	return ok
+}
+
+// ResetEmailProviders resets all changes to the "email_providers" field.
+func (m *PartnerConfigMutation) ResetEmailProviders() {
+	m.email_providers = nil
+	m.appendemail_providers = nil
+	delete(m.clearedFields, partnerconfig.FieldEmailProviders)
+}
+
+// SetSmsProviders sets the "sms_providers" field.
+func (m *PartnerConfigMutation) SetSmsProviders(sc []schema.ProviderConfig) {
+	m.sms_providers = &sc
+	m.appendsms_providers = nil
+}
+
+// SmsProviders returns the value of the "sms_providers" field in the mutation.
+func (m *PartnerConfigMutation) SmsProviders() (r []schema.ProviderConfig, exists bool) {
+	v := m.sms_providers
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmsProviders returns the old "sms_providers" field's value of the PartnerConfig entity.
+// If the PartnerConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PartnerConfigMutation) OldSmsProviders(ctx context.Context) (v []schema.ProviderConfig, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmsProviders is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmsProviders requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmsProviders: %w", err)
+	}
+	return oldValue.SmsProviders, nil
+}
+
+// AppendSmsProviders adds sc to the "sms_providers" field.
+func (m *PartnerConfigMutation) AppendSmsProviders(sc []schema.ProviderConfig) {
+	m.appendsms_providers = append(m.appendsms_providers, sc...)
+}
+
+// AppendedSmsProviders returns the list of values that were appended to the "sms_providers" field in this mutation.
+func (m *PartnerConfigMutation) AppendedSmsProviders() ([]schema.ProviderConfig, bool) {
+	if len(m.appendsms_providers) == 0 {
+		return nil, false
+	}
+	return m.appendsms_providers, true
+}
+
+// ClearSmsProviders clears the value of the "sms_providers" field.
+func (m *PartnerConfigMutation) ClearSmsProviders() {
+	m.sms_providers = nil
+	m.appendsms_providers = nil
+	m.clearedFields[partnerconfig.FieldSmsProviders] = struct{}{}
+}
+
+// SmsProvidersCleared returns if the "sms_providers" field was cleared in this mutation.
+func (m *PartnerConfigMutation) SmsProvidersCleared() bool {
+	_, ok := m.clearedFields[partnerconfig.FieldSmsProviders]
+	return ok
+}
+
+// ResetSmsProviders resets all changes to the "sms_providers" field.
+func (m *PartnerConfigMutation) ResetSmsProviders() {
+	m.sms_providers = nil
+	m.appendsms_providers = nil
+	delete(m.clearedFields, partnerconfig.FieldSmsProviders)
+}
+
+// SetPushProviders sets the "push_providers" field.
+func (m *PartnerConfigMutation) SetPushProviders(sc []schema.ProviderConfig) {
+	m.push_providers = &sc
+	m.appendpush_providers = nil
+}
+
+// PushProviders returns the value of the "push_providers" field in the mutation.
+func (m *PartnerConfigMutation) PushProviders() (r []schema.ProviderConfig, exists bool) {
+	v := m.push_providers
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPushProviders returns the old "push_providers" field's value of the PartnerConfig entity.
+// If the PartnerConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PartnerConfigMutation) OldPushProviders(ctx context.Context) (v []schema.ProviderConfig, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPushProviders is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPushProviders requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPushProviders: %w", err)
+	}
+	return oldValue.PushProviders, nil
+}
+
+// AppendPushProviders adds sc to the "push_providers" field.
+func (m *PartnerConfigMutation) AppendPushProviders(sc []schema.ProviderConfig) {
+	m.appendpush_providers = append(m.appendpush_providers, sc...)
+}
+
+// AppendedPushProviders returns the list of values that were appended to the "push_providers" field in this mutation.
+func (m *PartnerConfigMutation) AppendedPushProviders() ([]schema.ProviderConfig, bool) {
+	if len(m.appendpush_providers) == 0 {
+		return nil, false
+	}
+	return m.appendpush_providers, true
+}
+
+// ClearPushProviders clears the value of the "push_providers" field.
+func (m *PartnerConfigMutation) ClearPushProviders() {
+	m.push_providers = nil
+	m.appendpush_providers = nil
+	m.clearedFields[partnerconfig.FieldPushProviders] = struct{}{}
+}
+
+// PushProvidersCleared returns if the "push_providers" field was cleared in this mutation.
+func (m *PartnerConfigMutation) PushProvidersCleared() bool {
+	_, ok := m.clearedFields[partnerconfig.FieldPushProviders]
+	return ok
+}
+
+// ResetPushProviders resets all changes to the "push_providers" field.
+func (m *PartnerConfigMutation) ResetPushProviders() {
+	m.push_providers = nil
+	m.appendpush_providers = nil
+	delete(m.clearedFields, partnerconfig.FieldPushProviders)
+}
+
+// SetBatchConfig sets the "batch_config" field.
+func (m *PartnerConfigMutation) SetBatchConfig(sc *schema.BatchConfig) {
+	m.batch_config = &sc
+}
+
+// BatchConfig returns the value of the "batch_config" field in the mutation.
+func (m *PartnerConfigMutation) BatchConfig() (r *schema.BatchConfig, exists bool) {
+	v := m.batch_config
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBatchConfig returns the old "batch_config" field's value of the PartnerConfig entity.
+// If the PartnerConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PartnerConfigMutation) OldBatchConfig(ctx context.Context) (v *schema.BatchConfig, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBatchConfig is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBatchConfig requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBatchConfig: %w", err)
+	}
+	return oldValue.BatchConfig, nil
+}
+
+// ClearBatchConfig clears the value of the "batch_config" field.
+func (m *PartnerConfigMutation) ClearBatchConfig() {
+	m.batch_config = nil
+	m.clearedFields[partnerconfig.FieldBatchConfig] = struct{}{}
+}
+
+// BatchConfigCleared returns if the "batch_config" field was cleared in this mutation.
+func (m *PartnerConfigMutation) BatchConfigCleared() bool {
+	_, ok := m.clearedFields[partnerconfig.FieldBatchConfig]
+	return ok
+}
+
+// ResetBatchConfig resets all changes to the "batch_config" field.
+func (m *PartnerConfigMutation) ResetBatchConfig() {
+	m.batch_config = nil
+	delete(m.clearedFields, partnerconfig.FieldBatchConfig)
+}
+
+// SetRateLimits sets the "rate_limits" field.
+func (m *PartnerConfigMutation) SetRateLimits(ml map[string]schema.RateLimit) {
+	m.rate_limits = &ml
+}
+
+// RateLimits returns the value of the "rate_limits" field in the mutation.
+func (m *PartnerConfigMutation) RateLimits() (r map[string]schema.RateLimit, exists bool) {
+	v := m.rate_limits
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRateLimits returns the old "rate_limits" field's value of the PartnerConfig entity.
+// If the PartnerConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PartnerConfigMutation) OldRateLimits(ctx context.Context) (v map[string]schema.RateLimit, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRateLimits is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRateLimits requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRateLimits: %w", err)
+	}
+	return oldValue.RateLimits, nil
+}
+
+// ClearRateLimits clears the value of the "rate_limits" field.
+func (m *PartnerConfigMutation) ClearRateLimits() {
+	m.rate_limits = nil
+	m.clearedFields[partnerconfig.FieldRateLimits] = struct{}{}
+}
+
+// RateLimitsCleared returns if the "rate_limits" field was cleared in this mutation.
+func (m *PartnerConfigMutation) RateLimitsCleared() bool {
+	_, ok := m.clearedFields[partnerconfig.FieldRateLimits]
+	return ok
+}
+
+// ResetRateLimits resets all changes to the "rate_limits" field.
+func (m *PartnerConfigMutation) ResetRateLimits() {
+	m.rate_limits = nil
+	delete(m.clearedFields, partnerconfig.FieldRateLimits)
+}
+
+// SetEnabled sets the "enabled" field.
+func (m *PartnerConfigMutation) SetEnabled(b bool) {
+	m.enabled = &b
+}
+
+// Enabled returns the value of the "enabled" field in the mutation.
+func (m *PartnerConfigMutation) Enabled() (r bool, exists bool) {
+	v := m.enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnabled returns the old "enabled" field's value of the PartnerConfig entity.
+// If the PartnerConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PartnerConfigMutation) OldEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnabled: %w", err)
+	}
+	return oldValue.Enabled, nil
+}
+
+// ResetEnabled resets all changes to the "enabled" field.
+func (m *PartnerConfigMutation) ResetEnabled() {
+	m.enabled = nil
+}
+
+// Where appends a list predicates to the PartnerConfigMutation builder.
+func (m *PartnerConfigMutation) Where(ps ...predicate.PartnerConfig) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the PartnerConfigMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *PartnerConfigMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.PartnerConfig, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *PartnerConfigMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *PartnerConfigMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (PartnerConfig).
+func (m *PartnerConfigMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *PartnerConfigMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.create_time != nil {
+		fields = append(fields, partnerconfig.FieldCreateTime)
+	}
+	if m.update_time != nil {
+		fields = append(fields, partnerconfig.FieldUpdateTime)
+	}
+	if m.tenant_id != nil {
+		fields = append(fields, partnerconfig.FieldTenantID)
+	}
+	if m.email_providers != nil {
+		fields = append(fields, partnerconfig.FieldEmailProviders)
+	}
+	if m.sms_providers != nil {
+		fields = append(fields, partnerconfig.FieldSmsProviders)
+	}
+	if m.push_providers != nil {
+		fields = append(fields, partnerconfig.FieldPushProviders)
+	}
+	if m.batch_config != nil {
+		fields = append(fields, partnerconfig.FieldBatchConfig)
+	}
+	if m.rate_limits != nil {
+		fields = append(fields, partnerconfig.FieldRateLimits)
+	}
+	if m.enabled != nil {
+		fields = append(fields, partnerconfig.FieldEnabled)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *PartnerConfigMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case partnerconfig.FieldCreateTime:
+		return m.CreateTime()
+	case partnerconfig.FieldUpdateTime:
+		return m.UpdateTime()
+	case partnerconfig.FieldTenantID:
+		return m.TenantID()
+	case partnerconfig.FieldEmailProviders:
+		return m.EmailProviders()
+	case partnerconfig.FieldSmsProviders:
+		return m.SmsProviders()
+	case partnerconfig.FieldPushProviders:
+		return m.PushProviders()
+	case partnerconfig.FieldBatchConfig:
+		return m.BatchConfig()
+	case partnerconfig.FieldRateLimits:
+		return m.RateLimits()
+	case partnerconfig.FieldEnabled:
+		return m.Enabled()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *PartnerConfigMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case partnerconfig.FieldCreateTime:
+		return m.OldCreateTime(ctx)
+	case partnerconfig.FieldUpdateTime:
+		return m.OldUpdateTime(ctx)
+	case partnerconfig.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case partnerconfig.FieldEmailProviders:
+		return m.OldEmailProviders(ctx)
+	case partnerconfig.FieldSmsProviders:
+		return m.OldSmsProviders(ctx)
+	case partnerconfig.FieldPushProviders:
+		return m.OldPushProviders(ctx)
+	case partnerconfig.FieldBatchConfig:
+		return m.OldBatchConfig(ctx)
+	case partnerconfig.FieldRateLimits:
+		return m.OldRateLimits(ctx)
+	case partnerconfig.FieldEnabled:
+		return m.OldEnabled(ctx)
+	}
+	return nil, fmt.Errorf("unknown PartnerConfig field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PartnerConfigMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case partnerconfig.FieldCreateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreateTime(v)
+		return nil
+	case partnerconfig.FieldUpdateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdateTime(v)
+		return nil
+	case partnerconfig.FieldTenantID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case partnerconfig.FieldEmailProviders:
+		v, ok := value.([]schema.ProviderConfig)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmailProviders(v)
+		return nil
+	case partnerconfig.FieldSmsProviders:
+		v, ok := value.([]schema.ProviderConfig)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmsProviders(v)
+		return nil
+	case partnerconfig.FieldPushProviders:
+		v, ok := value.([]schema.ProviderConfig)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPushProviders(v)
+		return nil
+	case partnerconfig.FieldBatchConfig:
+		v, ok := value.(*schema.BatchConfig)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBatchConfig(v)
+		return nil
+	case partnerconfig.FieldRateLimits:
+		v, ok := value.(map[string]schema.RateLimit)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRateLimits(v)
+		return nil
+	case partnerconfig.FieldEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnabled(v)
+		return nil
+	}
+	return fmt.Errorf("unknown PartnerConfig field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *PartnerConfigMutation) AddedFields() []string {
+	var fields []string
+	if m.addtenant_id != nil {
+		fields = append(fields, partnerconfig.FieldTenantID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *PartnerConfigMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case partnerconfig.FieldTenantID:
+		return m.AddedTenantID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PartnerConfigMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case partnerconfig.FieldTenantID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTenantID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown PartnerConfig numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *PartnerConfigMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(partnerconfig.FieldEmailProviders) {
+		fields = append(fields, partnerconfig.FieldEmailProviders)
+	}
+	if m.FieldCleared(partnerconfig.FieldSmsProviders) {
+		fields = append(fields, partnerconfig.FieldSmsProviders)
+	}
+	if m.FieldCleared(partnerconfig.FieldPushProviders) {
+		fields = append(fields, partnerconfig.FieldPushProviders)
+	}
+	if m.FieldCleared(partnerconfig.FieldBatchConfig) {
+		fields = append(fields, partnerconfig.FieldBatchConfig)
+	}
+	if m.FieldCleared(partnerconfig.FieldRateLimits) {
+		fields = append(fields, partnerconfig.FieldRateLimits)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *PartnerConfigMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *PartnerConfigMutation) ClearField(name string) error {
+	switch name {
+	case partnerconfig.FieldEmailProviders:
+		m.ClearEmailProviders()
+		return nil
+	case partnerconfig.FieldSmsProviders:
+		m.ClearSmsProviders()
+		return nil
+	case partnerconfig.FieldPushProviders:
+		m.ClearPushProviders()
+		return nil
+	case partnerconfig.FieldBatchConfig:
+		m.ClearBatchConfig()
+		return nil
+	case partnerconfig.FieldRateLimits:
+		m.ClearRateLimits()
+		return nil
+	}
+	return fmt.Errorf("unknown PartnerConfig nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *PartnerConfigMutation) ResetField(name string) error {
+	switch name {
+	case partnerconfig.FieldCreateTime:
+		m.ResetCreateTime()
+		return nil
+	case partnerconfig.FieldUpdateTime:
+		m.ResetUpdateTime()
+		return nil
+	case partnerconfig.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case partnerconfig.FieldEmailProviders:
+		m.ResetEmailProviders()
+		return nil
+	case partnerconfig.FieldSmsProviders:
+		m.ResetSmsProviders()
+		return nil
+	case partnerconfig.FieldPushProviders:
+		m.ResetPushProviders()
+		return nil
+	case partnerconfig.FieldBatchConfig:
+		m.ResetBatchConfig()
+		return nil
+	case partnerconfig.FieldRateLimits:
+		m.ResetRateLimits()
+		return nil
+	case partnerconfig.FieldEnabled:
+		m.ResetEnabled()
+		return nil
+	}
+	return fmt.Errorf("unknown PartnerConfig field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *PartnerConfigMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *PartnerConfigMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *PartnerConfigMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *PartnerConfigMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *PartnerConfigMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *PartnerConfigMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *PartnerConfigMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown PartnerConfig unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *PartnerConfigMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown PartnerConfig edge %s", name)
 }
